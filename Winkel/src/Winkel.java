@@ -8,24 +8,23 @@ import java.security.cert.CertificateException;
 
 public class Winkel {
 	
-	private KeyStore keyStore;
 	private String winkelNaam;
-	private String filePadTotKeyStore;
 	
-	public Winkel(String winkelNaam, String filePadTotKeyStore){
+	public Winkel(String winkelNaam){
 		this.winkelNaam = winkelNaam;
-		this.filePadTotKeyStore = filePadTotKeyStore;
 	}
 	
-	protected void loadKeyStore(char[] paswoordVoorKeyStore)
-			throws NoSuchAlgorithmException, CertificateException, IOException, KeyStoreException{
-		
-		keyStore = KeyStore.getInstance("JKS");
-		FileInputStream inputStream = new FileInputStream(new File(filePadTotKeyStore));
-		keyStore.load(inputStream, paswoordVoorKeyStore);
-		inputStream.close();
+	public String getWinkelNaam() {
+		return winkelNaam;
 	}
 	
+	public void puntenToevoegen(int punten){
+		System.out.println("Er worden " + punten + " punten toegevoegd");
+	}
 	
+	public void startGUI(){
+		WinkelGUI gui = new WinkelGUI(this);
+		gui.setVisible(true);
+	}
 
 }
