@@ -1,7 +1,5 @@
 package main;
 
-import Certificate;
-
 public class WinkelData {
 	
 	private String naam;
