@@ -1,5 +1,8 @@
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
@@ -24,9 +27,10 @@ public class WinkelMain {
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 * @throws KeyStoreException
+	 * @throws ClassNotFoundException 
 	 */
 	public static void main(String[] args) throws NoSuchAlgorithmException, CertificateException, FileNotFoundException,
-			IOException, KeyStoreException {
+			IOException, KeyStoreException, ClassNotFoundException {
 
 
 		System.out.println("Geef het nummer van de winkel.");
@@ -36,6 +40,7 @@ public class WinkelMain {
 		// Dit blijft gebeuren dat het winkelnummer een aanvaardbaar nummer is
 		// (nummer tussen 1-4).
 		int winkelnummer = Integer.parseInt(SCANNER.nextLine());
+		
 		while (winkelnummer <= 0 || winkelnummer > 4) {
 			System.err.println("Het ingegeven winkelnummer is niet correct");
 			winkelnummer = Integer.parseInt(SCANNER.nextLine());
@@ -66,7 +71,22 @@ public class WinkelMain {
 		
 		winkel.startGUI();
 		
-
+		
+		String hostname = "localhost";
+		int portNumber = 4443;
+		
+		Socket socket = new Socket(hostname, portNumber);
+		
+		ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+		
+		ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+		
+		System.out.println("CMOOOOOOOOOON");
+		out.writeObject("fucke youuuu, Kratos");
+		Object ob = in.readObject();
+		System.out.println(ob.toString());
+		out.writeObject("stop");
+		socket.close();
 	}
 
 }
