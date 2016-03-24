@@ -1,12 +1,22 @@
+import java.io.FileInputStream;
 import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.Security;
 import java.security.spec.ECGenParameterSpec;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
+import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -17,15 +27,53 @@ public class ECJavaPublicKeyGen {
 		
 		KeyPair kp = ECJavaPublicKeyGen.generateECCKeyPair();
 		
-		ECPrivateKey pKey = (ECPrivateKey)kp.getPrivate();
-		System.out.println("private key");
-		print("" + new BigInteger(1, pKey.getD().toByteArray()).toString(16));
+		String directoryNaam = "pornomap";
+		String bestandsNaam = "pornoprentje1";
 		
-		System.out.println();
-		System.out.println("public key");
+		KeyStore keyStore = KeyStore.getInstance("JKS");
+		String fileName = directoryNaam + bestandsNaam + ".jks";
+		
+		FileInputStream fis = new FileInputStream(fileName);
+		keyStore.load(fis, "kiwikiwi".toCharArray());
+		
+		
+		
+		ECPrivateKey pKey = (ECPrivateKey)kp.getPrivate();
+		/*System.out.println("private key");
+		print("" + new BigInteger(1, pKey.getD().toByteArray()).toString(16));*/
+		
+		System.out.println("public key parameter Q");
 		ECPublicKey publickey = (ECPublicKey) kp.getPublic();
 		print("" + new BigInteger(1, publickey.getQ().getEncoded()).toString(16));
 		//ECJavaPublicKeyGen.printSecret((ECPublicKey) kp.getPublic());
+		
+		ECPrivateKey privateKey = (ECPrivateKey) kp.getPrivate();
+		System.out.println("private key parameter D");
+		print("" + new BigInteger(1, privateKey.getD().toByteArray()).toString(16));
+		
+		System.out.println("public key");
+		print("" + new BigInteger(1,publickey.getEncoded()).toString(16));
+		
+		System.out.println("private key");
+		print("" + new BigInteger(1,privateKey.getEncoded()).toString(16));
+		
+		//ECJavaPublicKeyGen.printSecret((ECPrivateKey) kp.getPrivate());
+		//ECJavaPublicKeyGen.printSecret((ECPublicKey) kp.getPublic());
+		
+		PrivateKey priv =  kp.getPrivate();
+		PublicKey pub = kp.getPublic();
+		//System.out.println(new BigInteger(1, priv.getEncoded()).toString(16));
+		//System.out.println(new BigInteger(1, pub.getEncoded()).toString(16));
+		
+		byte[] testPriv = priv.getEncoded();
+		
+		
+		byte[] testPub = pub.getEncoded();
+		KeyFactory kf = KeyFactory.getInstance("EC"); // or "EC" or whatever
+		//PrivateKey privateK = kf.generatePrivate(new PKCS8EncodedKeySpec(lcpPrivateKey));
+		PublicKey publicK = kf.generatePublic(new X509EncodedKeySpec(testPub));
+		/*ECGenParameterSpec ecParamSpec = new ECGenParameterSpec("prime192v1");
+	    ISigner signer = SignerUtilities.GetSigner("SHA-256withECDSA");*/
 		
 	}
 	
