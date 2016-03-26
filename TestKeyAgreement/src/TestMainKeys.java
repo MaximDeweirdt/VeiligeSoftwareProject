@@ -44,7 +44,7 @@ public class TestMainKeys {
 		keyGen.initialize(ecSpec, random);
 		
 		KeyFactory kf = KeyFactory.getInstance("EC"); // or "EC" or whatever
-		PrivateKey pr = kf.generatePrivate(new PKCS8EncodedKeySpec(SecurityData.privateKeyCard));
+		PrivateKey pr = kf.generatePrivate(new X509EncodedKeySpec(SecurityData.privateKeyCard));
 		PublicKey pu = kf.generatePublic(new X509EncodedKeySpec(SecurityData.publicKeyCard));
 		
 		KeyAgreement aKeyAgree = KeyAgreement.getInstance("ECDH", "BC");
