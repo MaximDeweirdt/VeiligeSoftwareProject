@@ -26,6 +26,10 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
+import socketListeners.registerSocketListenerThread;
+import socketListeners.verificationSocketListenerThread;
+import socketThreads.LCPVerificationThread;
+
 public class MainLCP {
 
 	private static List<WinkelData> winkelDataList = new ArrayList<>();
@@ -35,29 +39,13 @@ public class MainLCP {
 		
 //		winkelDataList = makeWinkelData();
 		
-		int port = 4443; // Port where the SSL Server needs to listen for new requests from the client
-
+		int registerPort = 4443; // Port where the SSL Server needs to listen for new requests from the client
+		int verificationPort = 4444;
 		
-	    ServerSocket ss = new ServerSocket(port);
-
-	    System.out.println("Ready...");
-	    while (true) {
-	      new LCPVerificationThread(ss.accept()).start();
-	    }
-
 		
-	}
-	
-	private static List<WinkelData> makeWinkelData() throws ClassNotFoundException, IOException {
+		new registerSocketListenerThread(registerPort).start();
+		new verificationSocketListenerThread(verificationPort).start();
 		
-		List<WinkelData> wdList = new ArrayList<>();
-
-		Certificate cert = (Certificate) Certificate.deserialize(SecurityData.colruytCertificate);
-		
-		WinkelData wd = new WinkelData(cert, "Colruyt");
-		wdList.add(wd);
-		
-		return wdList;
 	}
 }
 		

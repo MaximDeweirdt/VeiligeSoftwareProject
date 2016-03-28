@@ -1,4 +1,4 @@
-package main;
+package socketThreads;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -6,6 +6,8 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 import javax.net.ssl.SSLSocket;
+
+import protocols.LCPProtocol;
 
 
 public class LCPVerificationThread extends Thread {
@@ -42,7 +44,7 @@ public class LCPVerificationThread extends Thread {
 					output = lcpp.processInput(input);
 					out.writeObject(output);
 					out.reset();
-					if(output.toString().equals("stop")){
+					if(output.toString().equals("Bye")){
 						break;
 					}
 				}
