@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.math.BigInteger;
 import java.net.Socket;
 import java.security.Key;
 import java.security.KeyFactory;
@@ -28,13 +29,18 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.smartcardio.*;
 
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
+import org.bouncycastle.jce.interfaces.ECPublicKey;
 
 import com.sun.org.apache.xml.internal.security.utils.Base64;
 
 public class Client {
 
 	private final static byte IDENTITY_CARD_CLA =(byte)0x80;
-	private static final byte VALIDATE_PIN_INS = 0x22;
+	private static final byte VALIDATE_PIN_INS = 0x01;
+	
+	private static final byte KEY_AGREEMENT_INS = 0x02;
+	
+	
 	private final static short SW_VERIFICATION_FAILED = 0x6300;
 	private final static short SW_PIN_VERIFICATION_REQUIRED = 0x6301;
 	
@@ -42,19 +48,49 @@ public class Client {
 	/**
 	 * @param args
 	 */
+	
+	private static byte[] publicKeyParameterQFromLCP = new byte[]{
+			(byte) 0x04, (byte) 0xa9, (byte) 0xfe, (byte) 0x35, (byte) 0x45, (byte) 0xf0, 
+			(byte) 0xaf, (byte) 0x79, (byte) 0x60, (byte) 0x8f, (byte) 0xd5, (byte) 0x79, 
+			(byte) 0x09, (byte) 0xcb, (byte) 0x32, (byte) 0x9b, (byte) 0x77, (byte) 0xde, 
+			(byte) 0x96, (byte) 0x8a, (byte) 0x9c, (byte) 0x2e, (byte) 0x3f, (byte) 0x3c, 
+			(byte) 0x63, (byte) 0x8d, (byte) 0xc4, (byte) 0x36, (byte) 0x94, (byte) 0x3e, 
+			(byte) 0x62, (byte) 0x1c, (byte) 0x95, (byte) 0xb3, (byte) 0xa0, (byte) 0x4b, 
+			(byte) 0x3b, (byte) 0x90, (byte) 0xab, (byte) 0x0b, (byte) 0xdf, (byte) 0x14, 
+			(byte) 0x19, (byte) 0xba, (byte) 0x0a, (byte) 0xed, (byte) 0x4d, (byte) 0x90, 
+			(byte) 0x2c
+
+		};
+	
+	private static byte[] publicKeyLCP = new byte[]{
+			(byte) 0x30, (byte) 0x49, (byte) 0x30, (byte) 0x13, (byte) 0x06, (byte) 0x07, 
+			(byte) 0x2a, (byte) 0x86, (byte) 0x48, (byte) 0xce, (byte) 0x3d, (byte) 0x02, 
+			(byte) 0x01, (byte) 0x06, (byte) 0x08, (byte) 0x2a, (byte) 0x86, (byte) 0x48, 
+			(byte) 0xce, (byte) 0x3d, (byte) 0x03, (byte) 0x01, (byte) 0x01, (byte) 0x03, 
+			(byte) 0x32, (byte) 0x00, (byte) 0x04, (byte) 0xa9, (byte) 0xfe, (byte) 0x35, 
+			(byte) 0x45, (byte) 0xf0, (byte) 0xaf, (byte) 0x79, (byte) 0x60, (byte) 0x8f, 
+			(byte) 0xd5, (byte) 0x79, (byte) 0x09, (byte) 0xcb, (byte) 0x32, (byte) 0x9b, 
+			(byte) 0x77, (byte) 0xde, (byte) 0x96, (byte) 0x8a, (byte) 0x9c, (byte) 0x2e, 
+			(byte) 0x3f, (byte) 0x3c, (byte) 0x63, (byte) 0x8d, (byte) 0xc4, (byte) 0x36, 
+			(byte) 0x94, (byte) 0x3e, (byte) 0x62, (byte) 0x1c, (byte) 0x95, (byte) 0xb3, 
+			(byte) 0xa0, (byte) 0x4b, (byte) 0x3b, (byte) 0x90, (byte) 0xab, (byte) 0x0b, 
+			(byte) 0xdf, (byte) 0x14, (byte) 0x19, (byte) 0xba, (byte) 0x0a, (byte) 0xed, 
+			(byte) 0x4d, (byte) 0x90, (byte) 0x2c
+		};
+	
 	public static void main(String[] args) throws Exception {
 		IConnection c;
-
+		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 		//Real Card:
-//		c = new Connection();
-//		((Connection)c).setTerminal(0); //depending on which cardreader you use
-//		
-//		c.connect(); 
+		c = new Connection();
+		((Connection)c).setTerminal(0); //depending on which cardreader you use
+		
+		c.connect(); 
 		
 		String hostname = "localhost";
 		int portNumber = 4443;
 		
-		Socket socket = new Socket(hostname, portNumber);
+		/*Socket socket = new Socket(hostname, portNumber);
 		
 		ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
 		ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
@@ -123,14 +159,14 @@ public class Client {
 			
 		}catch(Exception e){
 			e.printStackTrace();
-		}
+		}*/
 		
-		/*
+		
 		try {
 			
 			CommandAPDU a;
 			ResponseAPDU r;
-			
+
 			//Send PIN
 			a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00,new byte[]{0x01,0x02,0x03,0x04});
 			r = c.transmit(a);
@@ -140,8 +176,17 @@ public class Client {
 			else if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
 			System.out.println("PIN Verified");
 			
-			//kiezen bij welke winkel te registreren
 			
+			//KEY AGREEMENT WITH LCP
+			KeyFactory kf = KeyFactory.getInstance("EC","BC"); // or "EC" or whatever
+			a = new CommandAPDU(IDENTITY_CARD_CLA, KEY_AGREEMENT_INS , (byte)(publicKeyParameterQFromLCP.length &0xff) , 0x00,publicKeyParameterQFromLCP);
+			r = c.transmit(a);
+			byte[] symmetricKey = r.getData();
+			//System.out.println("serialnumber = " + serialNumber);
+			System.out.println(r);
+			System.out.println("symmetric key with LCP = " + new BigInteger(1,symmetricKey).toString(16));
+			
+			//kiezen bij welke winkel te registreren
 			int winkelnummer = Integer.parseInt(SCANNER.nextLine());
 			byte[] winkelKeuze = "0".getBytes();
 			while (winkelnummer <= 0 || winkelnummer > 4) {
@@ -162,10 +207,13 @@ public class Client {
 				System.err.println("rip");
 				break;
 			}
-			out.writeObject(winkelKeuze);
+			
+			
+			/*out.writeObject(winkelKeuze);
 			//hier komt het geencrypteerde certificaat met het pseudoniem dat op de kaart moet opgeslaan worden
 			//dit is ook het certificaat van de kaart dat later gerevoceerd moet kunnen worden (dus ook bijgehouden op LCP denk ik)
-			ob = in.readObject();
+			ob = in.readObject();*/
+			
 			
 			
 		} catch (Exception e) {
@@ -174,11 +222,11 @@ public class Client {
 		finally {
 			c.close();  // close the connection with the card
 			
-			out.writeObject("stop");
-			socket.close();
+			/*out.writeObject("stop");
+			socket.close();*/
 		}
 
-*/
+
 	}
 
 }

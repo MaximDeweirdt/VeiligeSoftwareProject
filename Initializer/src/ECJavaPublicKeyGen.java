@@ -13,8 +13,6 @@ import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.Security;
 import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
@@ -58,7 +56,7 @@ public class ECJavaPublicKeyGen {
 
 		KeyPair kp = ECJavaPublicKeyGen.generateECCKeyPair();
 
-		String directoryNaam = "keystore";
+		/*String directoryNaam = "keystore";
 		String bestandsNaam = "Colruytcert";
 		char[] password = "kiwikiwi".toCharArray();
 		KeyStore keyStore = KeyStore.getInstance("JKS");
@@ -76,7 +74,7 @@ public class ECJavaPublicKeyGen {
 		// Save the new keystore contents
 		FileOutputStream out = new FileOutputStream(keystoreFile);
 		keyStore.store(out, password);
-		out.close();
+		out.close();*/
 		
 		
 		/*// Store Public Key.
@@ -97,6 +95,7 @@ public class ECJavaPublicKeyGen {
 
 		System.out.println("public key parameter Q");
 		ECPublicKey publickey = (ECPublicKey) kp.getPublic();
+		//printSecret(publickey);
 		print("" + new BigInteger(1, publickey.getQ().getEncoded()).toString(16));
 		// ECJavaPublicKeyGen.printSecret((ECPublicKey) kp.getPublic());
 
@@ -113,8 +112,8 @@ public class ECJavaPublicKeyGen {
 		// ECJavaPublicKeyGen.printSecret((ECPrivateKey) kp.getPrivate());
 		// ECJavaPublicKeyGen.printSecret((ECPublicKey) kp.getPublic());
 
-		PrivateKey priv = kp.getPrivate();
-		PublicKey pub = kp.getPublic();
+		ECPrivateKey priv = (ECPrivateKey) kp.getPrivate();
+		ECPublicKey pub = (ECPublicKey) kp.getPublic();
 		// System.out.println(new BigInteger(1,
 		// priv.getEncoded()).toString(16));
 		// System.out.println(new BigInteger(1, pub.getEncoded()).toString(16));
@@ -125,7 +124,7 @@ public class ECJavaPublicKeyGen {
 		KeyFactory kf = KeyFactory.getInstance("EC"); // or "EC" or whatever
 		// PrivateKey privateK = kf.generatePrivate(new
 		// PKCS8EncodedKeySpec(lcpPrivateKey));
-		PublicKey publicK = kf.generatePublic(new X509EncodedKeySpec(testPub));
+		//ECPublicKey publicK = (ECPublicKey) kf.generatePublic(new X509EncodedKeySpec(testPub));
 		/*
 		 * ECGenParameterSpec ecParamSpec = new
 		 * ECGenParameterSpec("prime192v1"); ISigner signer =
