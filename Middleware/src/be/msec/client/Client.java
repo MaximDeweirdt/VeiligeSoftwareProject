@@ -9,6 +9,7 @@ import java.io.FileInputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.MessageDigest;
@@ -21,10 +22,14 @@ import java.util.Scanner;
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.DESKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.smartcardio.*;
 
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
+
+import com.sun.org.apache.xml.internal.security.utils.Base64;
 
 public class Client {
 
@@ -86,21 +91,24 @@ public class Client {
 			MessageDigest hash = MessageDigest.getInstance("SHA1", "BC");
 			byte[] hashKey = hash.digest(keyAgreementLCP.generateSecret());
 			
-			SecretKey secretKey = new SecretKeySpec( hashKey, "AES");
+			SecretKeyFactory skf = SecretKeyFactory.getInstance("DES");
+			DESKeySpec desSpec = new DESKeySpec(hashKey);
+			SecretKey secretKey = skf.generateSecret(desSpec);
 			
 //			SecretKey secret = keyAgreementLCP.generateSecret("DES");
 			
 			// Create the cipher
-		    Cipher aesCipher = Cipher.getInstance("AES/ECB/PKCS5Padding","BC");
+		    Cipher aesCipher = Cipher.getInstance("DES","BC");
 
 		    // Initialize the cipher for encryption
 		    aesCipher.init(Cipher.ENCRYPT_MODE, secretKey);
 
 		    // Encrypt the cleartext
 		    byte[] output = "Hello from the other side".getBytes();
+		    System.out.println("clean bytearray: " + output);
 		    byte[] ciphertext = aesCipher.doFinal(output);
 		    
-			System.out.println("sending message: " + ciphertext.toString());
+			System.out.println("sending message: " +ciphertext);
 			out.writeObject(ciphertext);
 			
 			byte[] input = (byte[]) in.readObject();
@@ -111,7 +119,7 @@ public class Client {
 		    // Decrypt the cleartext
 		    byte[] decryptedText = aesCipher.doFinal(input);
 		    
-			System.out.println(decryptedText.toString());
+			System.out.println(Base64.encode(decryptedText));
 			
 		}catch(Exception e){
 			e.printStackTrace();

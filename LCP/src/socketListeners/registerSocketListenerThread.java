@@ -16,6 +16,8 @@ import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.DESKeySpec;
 
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.asn1.x9.DHPublicKey;
@@ -67,9 +69,11 @@ public class registerSocketListenerThread extends Thread {
 			keyAgreementLCP.doPhase(publicKeyCard, true);
 	
 			MessageDigest hash = MessageDigest.getInstance("SHA1", "BC");
-			System.out.println(new String(hash.digest(keyAgreementLCP.generateSecret())));
+			byte[] hashKey = hash.digest(keyAgreementLCP.generateSecret());
 			
-			SecretKey secretKey = keyAgreementLCP.generateSecret("DES");
+			SecretKeyFactory skf = SecretKeyFactory.getInstance("DES");
+			DESKeySpec desSpec = new DESKeySpec(hashKey);
+			SecretKey secretKey = skf.generateSecret(desSpec);
 			
 			System.out.println("RegisterSocket Ready with secretKey");
 			while (true) {
