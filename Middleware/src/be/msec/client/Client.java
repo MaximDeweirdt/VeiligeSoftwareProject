@@ -21,6 +21,7 @@ import java.util.Scanner;
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import javax.smartcardio.*;
 
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
@@ -83,12 +84,14 @@ public class Client {
 			keyAgreementLCP.doPhase(publicKeyLCP, true);
 	
 			MessageDigest hash = MessageDigest.getInstance("SHA1", "BC");
-			System.out.println(new String(hash.digest(keyAgreementLCP.generateSecret())));
+			byte[] hashKey = hash.digest(keyAgreementLCP.generateSecret());
 			
-			SecretKey secretKey = keyAgreementLCP.generateSecret("DES");
+			SecretKey secretKey = new SecretKeySpec( hashKey, "AES");
+			
+//			SecretKey secret = keyAgreementLCP.generateSecret("DES");
 			
 			// Create the cipher
-		    Cipher aesCipher = Cipher.getInstance("AES/ECB/PKCS5Padding", "BC");
+		    Cipher aesCipher = Cipher.getInstance("AES/ECB/PKCS5Padding","BC");
 
 		    // Initialize the cipher for encryption
 		    aesCipher.init(Cipher.ENCRYPT_MODE, secretKey);
