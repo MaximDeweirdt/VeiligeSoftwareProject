@@ -85,10 +85,10 @@ public class Client {
 			MessageDigest hash = MessageDigest.getInstance("SHA1", "BC");
 			System.out.println(new String(hash.digest(keyAgreementLCP.generateSecret())));
 			
-			SecretKey secretKey = keyAgreementLCP.generateSecret("AES");
+			SecretKey secretKey = keyAgreementLCP.generateSecret("DES");
 			
 			// Create the cipher
-		    Cipher aesCipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+		    Cipher aesCipher = Cipher.getInstance("AES/ECB/PKCS5Padding", "BC");
 
 		    // Initialize the cipher for encryption
 		    aesCipher.init(Cipher.ENCRYPT_MODE, secretKey);
