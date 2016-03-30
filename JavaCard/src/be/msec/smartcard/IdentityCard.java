@@ -9,6 +9,7 @@ import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
 import javacard.framework.OwnerPIN;
 import javacard.framework.Util;
+import javacard.security.DESKey;
 import javacard.security.ECKey;
 import javacard.security.ECPrivateKey;
 import javacard.security.ECPublicKey;
@@ -16,14 +17,17 @@ import javacard.security.KeyAgreement;
 import javacard.security.KeyBuilder;
 import javacard.security.PrivateKey;
 import javacard.security.PublicKey;
+import javacardx.crypto.Cipher;
 
 public class IdentityCard extends Applet {
 	private final static byte IDENTITY_CARD_CLA = (byte) 0x80;
 
 	private static final byte VALIDATE_PIN_INS = 0x01;
 
-	private static final byte KEY_AGREEMENT_INS = 0x02;
-
+	private static final byte KEY_AGREEMENT_LCP_INS = 0x02;
+	private static final byte ENCRYPT_DATA_LCP_INS = 0x03;
+	private static final byte DECRYPT_DATA_LCP_INS = 0x04;
+	
 	private final static byte PIN_TRY_LIMIT = (byte) 0x03;
 	private final static byte PIN_SIZE = (byte) 0x04;
 
@@ -31,7 +35,9 @@ public class IdentityCard extends Applet {
 	private final static short SW_PIN_VERIFICATION_REQUIRED = 0x6301;
 
 	private OwnerPIN pin;
-
+	private DESKey secretDesKeyWithLCP;
+	private Cipher cipherWithLCP;
+	
 	public static byte[] privateKeyCard = new byte[] { (byte) 0x30, (byte) 0x7b, (byte) 0x02, (byte) 0x01, (byte) 0x00,
 			(byte) 0x30, (byte) 0x13, (byte) 0x06, (byte) 0x07, (byte) 0x2a, (byte) 0x86, (byte) 0x48, (byte) 0xce,
 			(byte) 0x3d, (byte) 0x02, (byte) 0x01, (byte) 0x06, (byte) 0x08, (byte) 0x2a, (byte) 0x86, (byte) 0x48,
@@ -104,8 +110,14 @@ public class IdentityCard extends Applet {
 		case VALIDATE_PIN_INS:
 			validatePIN(apdu);
 			break;
-		case KEY_AGREEMENT_INS:
-			keyAgreement(apdu);
+		case KEY_AGREEMENT_LCP_INS:
+			keyAgreementLCP(apdu);
+			break;
+		case ENCRYPT_DATA_LCP_INS:
+			encryptData(apdu);
+			break;
+		case DECRYPT_DATA_LCP_INS:
+			decryptDataLCP(apdu);
 			break;
 		// If no matching instructions are found it is indicated in the status
 		// word of the response.
@@ -117,8 +129,46 @@ public class IdentityCard extends Applet {
 			ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
 		}
 	}
+	
+	private void decryptDataLCP(APDU apdu){
+		byte[] buffer = apdu.getBuffer();
+		short dataLength = apdu.setIncomingAndReceive();
+		short length = buffer[ISO7816.OFFSET_P1];
+		byte[] dataEncrypted = new byte[length];
+		Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, dataEncrypted, (short) 0, length);
+		
+		byte[] data = new byte[length];
+		cipherWithLCP.init(secretDesKeyWithLCP,Cipher.MODE_DECRYPT);
+		cipherWithLCP.doFinal(dataEncrypted, (short) 0 , length, data, (short) 0); 
+		
+		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+		else{
+			apdu.setOutgoing();
+			apdu.setOutgoingLength((short) length);
+			apdu.sendBytesLong(data, (short) 0, (short) length);
+		}
+	}
+	
+	private void encryptData(APDU apdu){
+		byte[] buffer = apdu.getBuffer();
+		short dataLength = apdu.setIncomingAndReceive();
+		short length = buffer[ISO7816.OFFSET_P1];
+		byte[] data = new byte[length];
+		Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, data, (short) 0, length);
+		
+		byte[] encryptedData = new byte[length];
+		cipherWithLCP.init(secretDesKeyWithLCP,Cipher.MODE_ENCRYPT);
+		cipherWithLCP.doFinal(data, (short) 0 , length, encryptedData, (short) 0); 
+		
+		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+		else{
+			apdu.setOutgoing();
+			apdu.setOutgoingLength((short) length);
+			apdu.sendBytesLong(encryptedData, (short) 0, (short) length);
+		}
+	}
 
-	private void keyAgreement(APDU apdu) {
+	private void keyAgreementLCP(APDU apdu) {
 		// get public key out of the data from the apdu data field
 		byte[] buffer = apdu.getBuffer();
 		short length2 = apdu.setIncomingAndReceive();
@@ -138,11 +188,24 @@ public class IdentityCard extends Applet {
 		byte[] secretKey = new byte[secretKeyLength];
 		Util.arrayCopy(secret, (short)0, secretKey,(short) 0, secretKeyLength);
 		
-		apdu.setOutgoing();
-		apdu.setOutgoingLength((short) secretKeyLength);
-		apdu.sendBytesLong(secretKey, (short) 0, (short) secretKeyLength);
+		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+		else{
+			generateCipherLCP(secretKey);
+			apdu.setOutgoing();
+			apdu.setOutgoingLength((short) secretKeyLength);
+			apdu.sendBytesLong(secretKey, (short) 0, (short) secretKeyLength);
+		}
+		
 	}
 
+	private void generateCipherLCP(byte[] secretKey) {
+		DESKey m_desKey = (DESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_DES, KeyBuilder.LENGTH_DES,false);
+		// SET KEY VALUE
+		m_desKey.setKey(secretKey, (short) 0); 
+		secretDesKeyWithLCP = m_desKey;
+		cipherWithLCP = Cipher.getInstance(Cipher.ALG_DES_ECB_NOPAD, false);
+	}
+	
 	/*
 	 * This method is used to authenticate the owner of the card using a PIN
 	 * code.

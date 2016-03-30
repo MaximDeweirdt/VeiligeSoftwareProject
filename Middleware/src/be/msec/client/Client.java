@@ -38,7 +38,9 @@ public class Client {
 	private final static byte IDENTITY_CARD_CLA =(byte)0x80;
 	private static final byte VALIDATE_PIN_INS = 0x01;
 	
-	private static final byte KEY_AGREEMENT_INS = 0x02;
+	private static final byte KEY_AGREEMENT_LCP_INS = 0x02;
+	private static final byte ENCRYPT_DATA_LCP_INS = 0x03;
+	private static final byte DECRYPT_DATA_LCP_INS = 0x04;
 	
 	
 	private final static short SW_VERIFICATION_FAILED = 0x6300;
@@ -175,16 +177,48 @@ public class Client {
 			if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("PIN INVALID");
 			else if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
 			System.out.println("PIN Verified");
+			System.out.println();
 			
-			
-			//KEY AGREEMENT WITH LCP
+			//KEY AGREEMENT WITH LCP, set DES key and generate cipher in the java card 
 			KeyFactory kf = KeyFactory.getInstance("EC","BC"); // or "EC" or whatever
-			a = new CommandAPDU(IDENTITY_CARD_CLA, KEY_AGREEMENT_INS , (byte)(publicKeyParameterQFromLCP.length &0xff) , 0x00,publicKeyParameterQFromLCP);
+			a = new CommandAPDU(IDENTITY_CARD_CLA, KEY_AGREEMENT_LCP_INS , (byte)(publicKeyParameterQFromLCP.length &0xff) , 0x00,publicKeyParameterQFromLCP);
 			r = c.transmit(a);
 			byte[] symmetricKey = r.getData();
 			//System.out.println("serialnumber = " + serialNumber);
 			System.out.println(r);
 			System.out.println("symmetric key with LCP = " + new BigInteger(1,symmetricKey).toString(16));
+			System.out.println();
+			
+			
+			//SEND data to encrypt on java card
+			byte[] data = new byte[]{'t','e','s','t','t','e','s','t'};
+			a = new CommandAPDU(IDENTITY_CARD_CLA, ENCRYPT_DATA_LCP_INS, (byte) (data.length&0xff), 0x00,data);
+			r = c.transmit(a);
+			System.out.println(r);
+			byte[] encryptedDataFromJavaCard = r.getData();
+			System.out.println("encrypted data from the card = " + new String(r.getData()));
+			
+			//encryption on java
+			DESKeySpec dks = new DESKeySpec(symmetricKey);
+			SecretKeyFactory skf = SecretKeyFactory.getInstance("DES");
+			SecretKey desKey = skf.generateSecret(dks);
+			Cipher encryptCipher = Cipher.getInstance("DES/ECB/NoPadding ");
+			encryptCipher.init(Cipher.ENCRYPT_MODE, desKey);
+			byte[] textinCipher = encryptCipher.doFinal(data);
+			System.out.println("encrypted data from client = " + new String(textinCipher));
+			System.out.println();
+			
+			//decryption on java card
+			a = new CommandAPDU(IDENTITY_CARD_CLA, DECRYPT_DATA_LCP_INS, (byte) (encryptedDataFromJavaCard.length&0xff), 0x00,encryptedDataFromJavaCard);
+			r = c.transmit(a);
+			System.out.println(r);
+			System.out.println("decrypted data from the card = " + new String(r.getData()));
+			
+			//decryption on java
+			encryptCipher.init(Cipher.DECRYPT_MODE, desKey);
+			byte[] text = encryptCipher.doFinal(textinCipher);
+			System.out.println("decrypted data from client = " + new String(text));
+			System.out.println();
 			
 			//kiezen bij welke winkel te registreren
 			int winkelnummer = Integer.parseInt(SCANNER.nextLine());
