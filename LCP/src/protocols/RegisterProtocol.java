@@ -36,88 +36,86 @@ import socketListeners.RegisterSocketListenerThread;
 import socketThreads.RegisterThread;
 
 public class RegisterProtocol {
-	
-	private SecretKey secretKey;
+
 	private Cipher aesCipher;
 	private RegisterThread rt;
-	
-	
+
 	public static final int TESTCONNECTIONSTATE = -1;
-	
+
 	public static final int CHECKCERTIFICATESTATE = 0;
 	public static final int KIESWINKELSTATE = 1;
-	
+
 	int state = CHECKCERTIFICATESTATE;
-	
-	public RegisterProtocol(RegisterThread rt){
+
+	public RegisterProtocol(RegisterThread rt) {
 		this.rt = rt;
 	}
-	
-	public byte[] processInput(Object theInput) throws Exception {
-		byte[] bye = {'b','y','e','e','b','y','e','e'};
-		byte[] theOutput = null;
-		
-		byte[] input = (byte[]) theInput;
-		
-		byte[] decryptedInput = decryptInput(input);
-		
-		if(theInput != null && theInput.toString().equals("close connection")){
-			
-			theOutput = bye;
-		}
-		else if (state == TESTCONNECTIONSTATE){
-			
-		}
-		else if(state == CHECKCERTIFICATESTATE){
-//			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-//			InputStream in = new ByteArrayInputStream(input);
-//			X509Certificate cardCert = (X509Certificate) certFactory.generateCertificate(in);
-			X509Certificate cardCert = (X509Certificate) theInput;
-			
-			try{
+
+	public Object processInput(Object theInput) throws Exception {
+		byte[] bye = { 'b', 'y', 'e', 'e', 'b', 'y', 'e', 'e' };
+		Object theOutput = null;
+
+		// byte[] decryptedInput = decryptInput(input);
+
+		if (theInput != null && theInput.toString().equals("close connection")) {
+
+			theOutput = "close connection";
+		} else if (state == TESTCONNECTIONSTATE) {
+
+		} else if (state == CHECKCERTIFICATESTATE) {
+			byte[] input = (byte[]) theInput;
+			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+			InputStream in = new ByteArrayInputStream(input);
+			X509Certificate cardCert = (X509Certificate) certFactory.generateCertificate(in);
+
+			try {
 				cardCert.checkValidity();
 				cardCert.verify(MainLCP.getPublicKeyLCP());
 				System.out.println("signature is correct");
-				byte[] accepted = {'a','c','c','e','p','t','e','d'};
-				theOutput = accepted;
-			}catch(Exception e){
+				byte[] accepted = { 'a', 'c', 'c', 'e', 'p', 't', 'e', 'd' };
+				theOutput = encryptOutput(accepted);
+			} catch (Exception e) {
 				System.err.println("signature isn't correct");
-				byte[] denied = {'d','e','n','i','e','d','e','d'};
-				theOutput = denied;
+				byte[] denied = { 'd', 'e', 'n', 'i', 'e', 'd', 'e', 'd' };
+				theOutput = encryptOutput(denied);
 			}
 			state = KIESWINKELSTATE;
-			
-		}
-		else if (state == KIESWINKELSTATE){
+
+		} else if (state == KIESWINKELSTATE) {
+			int winkelNummer = (int) theInput;
 			X509Certificate shopPseudoCert;
-			switch(decryptedInput.toString()){
-				case "1": 
-					System.out.println("winkel 1 gekozen");
-					shopPseudoCert = makePseudonimCert("winkel1");
-					theOutput = shopPseudoCert.getEncoded();
-					break;
-				case "2":
-					System.out.println("winkel 2 gekozen");
-					shopPseudoCert = makePseudonimCert("winkel2");
-					theOutput = shopPseudoCert.getEncoded();
-					break;
-				default: theOutput = bye ;
-			
+			// byte[] decryptedInput = decryptInput(input);
+			switch (winkelNummer) {
+			case 1:
+				System.out.println("winkel 1 gekozen");
+				shopPseudoCert = makePseudonimCert("winkel1");
+				theOutput = encryptOutput(shopPseudoCert.getEncoded());
+				break;
+			case 2:
+				System.out.println("winkel 2 gekozen");
+				shopPseudoCert = makePseudonimCert("winkel2");
+				theOutput = encryptOutput(shopPseudoCert.getEncoded());
+				break;
+			default:
+				theOutput = bye;
+
 			}
 			rt.finishedCom = true;
 		}
-		
-		return encryptOutput(theOutput);
+
+		return theOutput;
 	}
 
 	private X509Certificate makePseudonimCert(String shopName) throws Exception {
 		Date startDate = new Date();
 		Date expiryDate = new Date(2016, 12, 31, 23, 59, 59);
 		Long uniqueCardID = RegisterSocketListenerThread.getCardShopID().getAndIncrement();
-		
-		BigInteger serialNumber = new BigInteger("" + 10 + uniqueCardID); // serial number for
-															// certificate
-		
+
+		BigInteger serialNumber = new BigInteger("" + 10 + uniqueCardID); // serial
+																			// number
+																			// for
+		// certificate
+
 		// keypair is the EC public/private key pair
 		X500Principal dnName = new X500Principal("CN= " + shopName);
 		ContentSigner signer = new JcaContentSignerBuilder("SHA1withECDSA").build(MainLCP.getPrivateKeyLCP());
@@ -131,57 +129,75 @@ public class RegisterProtocol {
 
 		System.out.println(cert);
 		return cert;
-		
+
 	}
 
 	private byte[] decryptInput(byte[] theInput) throws Exception {
 		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 
-		KeyAgreement keyAgreementLCP = KeyAgreement.getInstance("ECDH", "BC");
-		keyAgreementLCP.init(MainLCP.getPrivateKeyLCP());
-		keyAgreementLCP.doPhase(MainLCP.getCardCert().getPublicKey(), true);
+		// KeyAgreement keyAgreementLCP = KeyAgreement.getInstance("ECDH",
+		// "BC");
+		// keyAgreementLCP.init(MainLCP.getPrivateKeyLCP());
+		// keyAgreementLCP.doPhase(MainLCP.getCardCert().getPublicKey(), true);
+		//
+		// MessageDigest hash = MessageDigest.getInstance("SHA1", "BC");
+		// byte[] hashKey = hash.digest(keyAgreementLCP.generateSecret());
+		//
+		// SecretKeyFactory skf = SecretKeyFactory.getInstance("DES");
+		// DESKeySpec desSpec = new DESKeySpec(hashKey);
+		// SecretKey secretKey = skf.generateSecret(desSpec);
+		//
+		// System.out.println("symmetric key with card = " + new
+		// BigInteger(1,secretKey.getEncoded()).toString(16));
 
-		MessageDigest hash = MessageDigest.getInstance("SHA1", "BC");
-		byte[] hashKey = hash.digest(keyAgreementLCP.generateSecret());
-		
-		SecretKeyFactory skf = SecretKeyFactory.getInstance("DES");
-		DESKeySpec desSpec = new DESKeySpec(hashKey);
-		SecretKey secretKey = skf.generateSecret(desSpec);
-		
-		System.out.println("symmetric key with card = " + new BigInteger(1,secretKey.getEncoded()).toString(16));
-		
-	    aesCipher = Cipher.getInstance("DES/ECB/NoPadding");
+		aesCipher = Cipher.getInstance("DES/ECB/NoPadding");
 
-	    // Initialize the cipher for encryption
-	    aesCipher.init(Cipher.DECRYPT_MODE, secretKey);
+		// Initialize the cipher for encryption
+		aesCipher.init(Cipher.DECRYPT_MODE, MainLCP.getSecretKey());
 
-	    // Decrypt the cleartext
-	    byte[] decryptedText = aesCipher.doFinal(theInput);
+		// Decrypt the cleartext
+		byte[] decryptedText = aesCipher.doFinal(theInput);
 		return decryptedText;
 	}
-	
+
 	private byte[] encryptOutput(byte[] theOutput) throws Exception {
 		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 
-		KeyAgreement keyAgreementLCP = KeyAgreement.getInstance("ECDH", "BC");
-		keyAgreementLCP.init(MainLCP.getPrivateKeyLCP());
-		keyAgreementLCP.doPhase(MainLCP.getCardCert().getPublicKey(), true);
+		System.out.println(theOutput.length);
+		if (theOutput.length % 8 != 0) {
+			int nAddZeros = 8-theOutput.length % 8;
+			byte[] zeros = new byte[nAddZeros];
+			for (int i = 0; i < nAddZeros; i++) {
+				zeros[i] = 0;
+			}
+//			int aLen = a.length;
+//			int bLen = b.length;
+			byte[] concat = new byte[nAddZeros + theOutput.length];
+			System.arraycopy(zeros, 0, concat, 0, nAddZeros);
+			System.arraycopy(theOutput, 0, concat, nAddZeros, theOutput.length);
+			theOutput = concat;
+		}
+		System.out.println(theOutput.length);
+		// KeyAgreement keyAgreementLCP = KeyAgreement.getInstance("ECDH",
+		// "BC");
+		// keyAgreementLCP.init(MainLCP.getPrivateKeyLCP());
+		// keyAgreementLCP.doPhase(MainLCP.getCardCert().getPublicKey(), true);
+		//
+		// MessageDigest hash = MessageDigest.getInstance("SHA1", "BC");
+		// byte[] hashKey = hash.digest(keyAgreementLCP.generateSecret());
+		//
+		// SecretKeyFactory skf = SecretKeyFactory.getInstance("DES");
+		// DESKeySpec desSpec = new DESKeySpec(hashKey);
+		// SecretKey secretKey = skf.generateSecret(desSpec);
 
-		MessageDigest hash = MessageDigest.getInstance("SHA1", "BC");
-		byte[] hashKey = hash.digest(keyAgreementLCP.generateSecret());
-		
-		SecretKeyFactory skf = SecretKeyFactory.getInstance("DES");
-		DESKeySpec desSpec = new DESKeySpec(hashKey);
-		SecretKey secretKey = skf.generateSecret(desSpec);
-		
 		// Create the cipher
-	    aesCipher = Cipher.getInstance("DES/ECB/NoPadding");
+		aesCipher = Cipher.getInstance("DES/ECB/NoPadding");
 
-	    // Initialize the cipher for encryption
-	    aesCipher.init(Cipher.ENCRYPT_MODE, secretKey);
+		// Initialize the cipher for encryption
+		aesCipher.init(Cipher.ENCRYPT_MODE, MainLCP.getSecretKey());
 
-	    // Encrypt the cleartext
-	    byte[] ciphertext = aesCipher.doFinal(theOutput);
+		// Encrypt the cleartext
+		byte[] ciphertext = aesCipher.doFinal(theOutput);
 
 		return ciphertext;
 	}
