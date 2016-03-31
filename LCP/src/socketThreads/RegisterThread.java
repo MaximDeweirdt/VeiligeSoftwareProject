@@ -18,9 +18,9 @@ public class RegisterThread extends Thread {
 	private ObjectOutputStream out;
 
 	private RegisterProtocol rp;
-	private SecretKey secretKey;
-	
-	public RegisterThread(Socket socket, SecretKey secretKey) {
+
+	public boolean finishedCom = false;
+	public RegisterThread(Socket socket) {
 		super("ShopRegisterThread");
 		this.socket = socket;
 	}
@@ -32,17 +32,14 @@ public class RegisterThread extends Thread {
 
 			this.out = out;
 			this.in = in;
-			rp = new RegisterProtocol(secretKey);
+			rp = new RegisterProtocol(this);
 			Object input;
 			Object output;
 			try {
-				while ((input = in.readObject()) != null) {
+				while ((input = in.readObject()) != null&&!finishedCom) {
 					output = rp.processInput(input);
 					out.writeObject(output);
 					out.reset();
-					if (output.toString().equals("Bye")) {
-						break;
-					}
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
