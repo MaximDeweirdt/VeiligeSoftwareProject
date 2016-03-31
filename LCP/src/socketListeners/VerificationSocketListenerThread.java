@@ -14,6 +14,8 @@ public class VerificationSocketListenerThread extends Thread {
 		
 		super("verificationSocketListenerThread");
 		ss = new ServerSocket(registerPort);
+		
+		
 	    
 	}
 	public void run() {

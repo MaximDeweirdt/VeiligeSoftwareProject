@@ -173,8 +173,8 @@ public class SercureConnectionMain {
 		MessageDigest hash = MessageDigest.getInstance("SHA1", "BC");
 		System.out.println("symmetric key card= " + new BigInteger(1,hash.digest(keyAgreementInTheCard.generateSecret())).toString(16));
 		System.out.println("symmetric key LCP= " + new BigInteger(1,hash.digest(keyAgreementLCP.generateSecret())).toString(16));
-		//System.out.println(new String(hash.digest(keyAgreementInColruyt.generateSecret())));
-
+		System.out.println();
+		System.out.println("" + new BigInteger(1,((hash.digest(keyAgreementLCP.generateSecret())))).toString(16));
 	}
 	public static void print(String byteText) {
 		for (int i = 0; i < byteText.length(); i++) {
