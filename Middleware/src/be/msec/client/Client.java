@@ -41,6 +41,9 @@ public class Client {
 	private static final byte KEY_AGREEMENT_LCP_INS = 0x02;
 	private static final byte ENCRYPT_DATA_LCP_INS = 0x03;
 	private static final byte DECRYPT_DATA_LCP_INS = 0x04;
+	private static final byte SET_ID_SHOP_INS = 0x05;
+	private static final byte SET_PSEUDONIEM_INS = 0x06;
+	
 	
 	
 	private final static short SW_VERIFICATION_FAILED = 0x6300;
@@ -232,16 +235,26 @@ public class Client {
 			//aan de kaart het winkelcertificaat vragen en dat doorsturen?
 			//moet alleszins ook iets van de kaart zijn zodat het geencrypteerd doorgestuurd kan worden
 			case 1:
-				winkelKeuze = "1".getBytes();
+				winkelKeuze = shortToByte((short)1);
 				break;
 			case 2:
-				winkelKeuze = "2".getBytes();
+				winkelKeuze = shortToByte((short)2);
 				break;
 			default:
 				System.err.println("rip");
 				break;
 			}
 			
+			//versturen van winkelkeuze naar de kaart
+			a = new CommandAPDU(IDENTITY_CARD_CLA, SET_ID_SHOP_INS, (byte) (winkelKeuze.length&0xff), 0x00,winkelKeuze);
+			r = c.transmit(a);
+			System.out.println(r);
+			
+			//setten van pseudoniem in de kaar
+			byte []pseudoniem = new byte[]{};
+			a = new CommandAPDU(IDENTITY_CARD_CLA, SET_PSEUDONIEM_INS, (byte) (pseudoniem.length&0xff), 0x00,pseudoniem);
+			r = c.transmit(a);
+			System.out.println(r);
 			
 			/*out.writeObject(winkelKeuze);
 			//hier komt het geencrypteerde certificaat met het pseudoniem dat op de kaart moet opgeslaan worden
@@ -262,5 +275,19 @@ public class Client {
 
 
 	}
+	private static short byteToShort(byte b) {
+		return (short) (b & 0xff);
+	}
 
+	private static short byteArrayToShort(byte[] b) {
+		short value = (short) (((b[0] << 8)) | ((b[1] & 0xff)));
+		return value;
+	}
+
+	private static byte[] shortToByte(short s) {
+		byte[] shortByte = new byte[2];
+		shortByte[0] = (byte) ((s >> 8) & 0xff);
+		shortByte[1] = (byte) (s & 0xff);
+		return shortByte;
+	}
 }

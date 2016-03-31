@@ -27,6 +27,8 @@ public class IdentityCard extends Applet {
 	private static final byte KEY_AGREEMENT_LCP_INS = 0x02;
 	private static final byte ENCRYPT_DATA_LCP_INS = 0x03;
 	private static final byte DECRYPT_DATA_LCP_INS = 0x04;
+	private static final byte SET_ID_SHOP_INS = 0x05;
+	private static final byte SET_PSEUDONIEM_INS = 0x06;
 	
 	private final static byte PIN_TRY_LIMIT = (byte) 0x03;
 	private final static byte PIN_SIZE = (byte) 0x04;
@@ -34,9 +36,16 @@ public class IdentityCard extends Applet {
 	private final static short SW_VERIFICATION_FAILED = 0x6300;
 	private final static short SW_PIN_VERIFICATION_REQUIRED = 0x6301;
 
+	private short idShop;
+	
 	private OwnerPIN pin;
 	private DESKey secretDesKeyWithLCP;
 	private Cipher cipherWithLCP;
+	
+	//NOG 3 pseudoniemen te maken
+	private byte[] pseudoniemColruyt = new byte[250];
+	
+	private short[] loyaltypoints;
 	
 	public static byte[] privateKeyCard = new byte[] { (byte) 0x30, (byte) 0x7b, (byte) 0x02, (byte) 0x01, (byte) 0x00,
 			(byte) 0x30, (byte) 0x13, (byte) 0x06, (byte) 0x07, (byte) 0x2a, (byte) 0x86, (byte) 0x48, (byte) 0xce,
@@ -119,6 +128,12 @@ public class IdentityCard extends Applet {
 		case DECRYPT_DATA_LCP_INS:
 			decryptDataLCP(apdu);
 			break;
+		case SET_ID_SHOP_INS:
+			setIDshop(apdu);
+			break;
+		case SET_PSEUDONIEM_INS:
+			safePseudoniemData(apdu);
+			break;
 		// If no matching instructions are found it is indicated in the status
 		// word of the response.
 		// This can be done by using this method. As an argument a short is
@@ -129,7 +144,37 @@ public class IdentityCard extends Applet {
 			ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
 		}
 	}
+
+	private void safePseudoniemData(APDU apdu) {
+		byte[] buffer = apdu.getBuffer();
+		short dataLength = apdu.setIncomingAndReceive();
+		short length = buffer[ISO7816.OFFSET_P1];
+		byte[] pseudoniem = new byte[length];
+		Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, pseudoniem, (short) 0, length);
+		
+		if(idShop == (short)0){
+			pseudoniemColruyt = pseudoniem;
+		}else if(idShop == (short)1){
+			//NOG TE SCHRIJVEN
+		}
+		
+		apdu.setOutgoing();
+		apdu.setOutgoingLength((short) length);
+		apdu.sendBytesLong(pseudoniem, (short) 0, (short) length);
+	}
 	
+	
+	private void setIDshop(APDU apdu) {
+		byte[] buffer = apdu.getBuffer();
+		short dataLength = apdu.setIncomingAndReceive();
+		byte[] idBytes = new byte[2];
+		Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, idBytes, (short) 0, (short) 2);
+		idShop = byteArrayToShort(idBytes);
+		apdu.setOutgoing();
+		apdu.setOutgoingLength((short) 2);
+		apdu.sendBytesLong(idBytes, (short) 0, (short) 2);
+	}
+
 	private void decryptDataLCP(APDU apdu){
 		byte[] buffer = apdu.getBuffer();
 		short dataLength = apdu.setIncomingAndReceive();
