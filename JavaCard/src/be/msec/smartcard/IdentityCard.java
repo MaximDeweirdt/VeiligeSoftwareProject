@@ -177,7 +177,8 @@ public class IdentityCard extends Applet {
 		else{
 			byte[] buffer = apdu.getBuffer();
 			short dataLength = apdu.setIncomingAndReceive();
-			short length = buffer[ISO7816.OFFSET_P1];
+			
+			short length = byteToShort(buffer[ISO7816.OFFSET_P1]);
 			byte[] pseudoniemEncrypted = new byte[length];
 			Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, pseudoniemEncrypted, (short) 0, length);
 			
@@ -188,10 +189,10 @@ public class IdentityCard extends Applet {
 			}else if(idShop == (short)1){
 				//NOG TE SCHRIJVEN
 			}
-			
+			byte[] response = new byte[]{(byte) 0xff};
 			apdu.setOutgoing();
-			apdu.setOutgoingLength((short) length);
-			apdu.sendBytesLong(pseudoniem, (short) 0, (short) length);
+			apdu.setOutgoingLength((short) 2);
+			apdu.sendBytesLong(shortToByte(length), (short) 0, (short) 2);
 		}
 	}
 	
@@ -228,7 +229,7 @@ public class IdentityCard extends Applet {
 		// get public key out of the data from the apdu data field
 		byte[] buffer = apdu.getBuffer();
 		short length2 = apdu.setIncomingAndReceive();
-		short length = buffer[ISO7816.OFFSET_P1];
+		short length = byteToShort(buffer[ISO7816.OFFSET_P1]);
 		byte[] pubParamWOther = new byte[length];
 		Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, pubParamWOther, (short) 0, length);
 		

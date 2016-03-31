@@ -4,10 +4,13 @@ import be.msec.client.connection.Connection;
 import be.msec.client.connection.IConnection;
 import be.msec.client.connection.SimulatedConnection;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -19,8 +22,11 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.Security;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 import java.util.Scanner;
 
 import javax.crypto.Cipher;
@@ -251,11 +257,24 @@ public class Client {
 			
 			out.writeObject(winkelnummer);
 			byte[] textinCipher = (byte[]) in.readObject();
+			System.out.println(new BigInteger(1,textinCipher).toString(16));
 			//versturen van winkelkeuze naar de kaart
 			//setten van pseudoniem in de kaart 
 			//TODO TEXTINCIPHER MOET HET EFFECTIEVE PSEUDONIEM VAN DE LCP WORDEN!!!!!
 			setShopIdAndPseudoniem(a,r,c,winkelKeuze,textinCipher);
+			//decryption on java
 			
+			/*DESKeySpec dks = new DESKeySpec(symmetrickey);
+			SecretKeyFactory skf = SecretKeyFactory.getInstance("DES");
+			SecretKey desKey = skf.generateSecret(dks);
+			Cipher encryptCipher = Cipher.getInstance("DES/ECB/NoPadding ");
+			encryptCipher.init(Cipher.DECRYPT_MODE, desKey);
+			byte[] text = encryptCipher.doFinal(textinCipher);
+			byte[] text2 = Arrays.copyOfRange(text, 3, 240);
+			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+			InputStream bbb = new ByteArrayInputStream(text2);
+			X509Certificate cert = (X509Certificate)certFactory.generateCertificate(bbb);
+			System.out.println();*/
 			
 
 
@@ -325,12 +344,14 @@ public class Client {
 		a = new CommandAPDU(IDENTITY_CARD_CLA, SET_ID_SHOP_INS, (byte) (shopId.length&0xff), 0x00,shopId);
 		r = c.transmit(a);
 		System.out.println(r);
-		
+		short lngth = (short) textinCipher.length;
+		//System.out.println(byteToShort((byte)(lngth&0xff)));
 		//setten van pseudoniem in de kaart
 		byte []pseudoniem = textinCipher;
-		a = new CommandAPDU(IDENTITY_CARD_CLA, SET_PSEUDONIEM_INS, (byte) (pseudoniem.length&0xff), 0x00,pseudoniem);
+		a = new CommandAPDU(IDENTITY_CARD_CLA, SET_PSEUDONIEM_INS, lngth, 0x00,pseudoniem);
 		r = c.transmit(a);
 		System.out.println(r);
+	//	System.err.println(byteArrayToShort(r.getData()));
 	}
 	
 	private static short byteToShort(byte b) {
