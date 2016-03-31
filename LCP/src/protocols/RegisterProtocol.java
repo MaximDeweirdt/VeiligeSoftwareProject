@@ -77,6 +77,7 @@ public class RegisterProtocol {
 			try{
 				cardCert.checkValidity();
 				cardCert.verify(MainLCP.getPublicKeyLCP());
+				System.out.println("signature is correct");
 				byte[] accepted = {'a','c','c','e','p','t','e','d'};
 				theOutput = accepted;
 			}catch(Exception e){
@@ -90,17 +91,17 @@ public class RegisterProtocol {
 		else if (state == KIESWINKELSTATE){
 			X509Certificate shopPseudoCert;
 			switch(decryptedInput.toString()){
-			case "1": 
-				System.out.println("winkel 1 gekozen");
-				shopPseudoCert = makePseudonimCert("winkel1");
-				theOutput = shopPseudoCert.getEncoded();
-				break;
-			case "2":
-				System.out.println("winkel 2 gekozen");
-				shopPseudoCert = makePseudonimCert("winkel2");
-				theOutput = shopPseudoCert.getEncoded();
-				break;
-			default: theOutput = bye ;
+				case "1": 
+					System.out.println("winkel 1 gekozen");
+					shopPseudoCert = makePseudonimCert("winkel1");
+					theOutput = shopPseudoCert.getEncoded();
+					break;
+				case "2":
+					System.out.println("winkel 2 gekozen");
+					shopPseudoCert = makePseudonimCert("winkel2");
+					theOutput = shopPseudoCert.getEncoded();
+					break;
+				default: theOutput = bye ;
 			
 			}
 			rt.finishedCom = true;
@@ -135,30 +136,10 @@ public class RegisterProtocol {
 
 	private byte[] decryptInput(byte[] theInput) throws Exception {
 		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
-		// Create the cipher
-		KeyStore keyStore = KeyStore.getInstance("JKS");
-		String directoryNaam = "keystore";
-		String bestandsNaam = "cardCert";
-		
-		String fileName = directoryNaam + "/" + bestandsNaam + "";
-		File keystoreFile = new File(fileName);
-		System.out.println(keystoreFile.exists());
-		
-		FileInputStream keyIn = new FileInputStream(keystoreFile);
-		keyStore.load(keyIn, "kiwikiwi".toCharArray());
-		
-		java.security.cert.Certificate LCPCert = keyStore.getCertificate("cardCert");
-
-		KeyFactory kf = KeyFactory.getInstance("EC", "BC"); 
-															
-		// get public key from the certificate of card
-		PublicKey publicKeyLCP = kf.generatePublic(new X509EncodedKeySpec(LCPCert.getPublicKey().getEncoded()));
-		
-		ECPrivateKey privateKeyCard = (ECPrivateKey) kf.generatePrivate(new PKCS8EncodedKeySpec(main.SecurityData.privateKey));
 
 		KeyAgreement keyAgreementLCP = KeyAgreement.getInstance("ECDH", "BC");
-		keyAgreementLCP.init(privateKeyCard);
-		keyAgreementLCP.doPhase(publicKeyLCP, true);
+		keyAgreementLCP.init(MainLCP.getPrivateKeyLCP());
+		keyAgreementLCP.doPhase(MainLCP.getCardCert().getPublicKey(), true);
 
 		MessageDigest hash = MessageDigest.getInstance("SHA1", "BC");
 		byte[] hashKey = hash.digest(keyAgreementLCP.generateSecret());
@@ -167,7 +148,9 @@ public class RegisterProtocol {
 		DESKeySpec desSpec = new DESKeySpec(hashKey);
 		SecretKey secretKey = skf.generateSecret(desSpec);
 		
-	    aesCipher = Cipher.getInstance("DES","BC");
+		System.out.println("symmetric key with card = " + new BigInteger(1,secretKey.getEncoded()).toString(16));
+		
+	    aesCipher = Cipher.getInstance("DES/ECB/NoPadding");
 
 	    // Initialize the cipher for encryption
 	    aesCipher.init(Cipher.DECRYPT_MODE, secretKey);
@@ -192,7 +175,7 @@ public class RegisterProtocol {
 		SecretKey secretKey = skf.generateSecret(desSpec);
 		
 		// Create the cipher
-	    aesCipher = Cipher.getInstance("DES","BC");
+	    aesCipher = Cipher.getInstance("DES/ECB/NoPadding");
 
 	    // Initialize the cipher for encryption
 	    aesCipher.init(Cipher.ENCRYPT_MODE, secretKey);

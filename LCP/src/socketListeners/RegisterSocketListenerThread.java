@@ -44,7 +44,7 @@ public class RegisterSocketListenerThread extends Thread {
 	public void run() {
 		
 			
-		System.out.println("RegisterSocket Ready with secretKey");
+		System.out.println("RegisterSocket Ready");
 		while (true) {
 			try {
 				new RegisterThread(ss.accept()).start();

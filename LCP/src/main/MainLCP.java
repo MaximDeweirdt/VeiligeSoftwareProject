@@ -2,13 +2,22 @@ package main;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.KeyStore;
+import java.security.MessageDigest;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+
+import javax.crypto.KeyAgreement;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.DESKeySpec;
+
 import java.security.cert.Certificate;
+import java.security.interfaces.ECPublicKey;
 
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 
@@ -18,7 +27,7 @@ import socketListeners.VerificationSocketListenerThread;
 public class MainLCP {
 	
 	private static ECPrivateKey privateKeyLCP;
-	private static PublicKey publicKeyLCP;
+	private static ECPublicKey publicKeyLCP;
 	private static Certificate cardCert;
 	public static void main(String[] args) throws Exception {
 		
@@ -42,7 +51,7 @@ public class MainLCP {
 		KeyFactory kf = KeyFactory.getInstance("EC", "BC"); 
 		
 		// get public key and private key
-		setPublicKeyLCP(kf.generatePublic(new X509EncodedKeySpec(main.SecurityData.publicKey)));
+		setPublicKeyLCP((ECPublicKey) kf.generatePublic(new X509EncodedKeySpec(main.SecurityData.publicKey)));
 		
 		setPrivateKeyLCP((ECPrivateKey) kf.generatePrivate(new PKCS8EncodedKeySpec(main.SecurityData.privateKey)));
 		
@@ -59,6 +68,22 @@ public class MainLCP {
 		
 		setCardCert(keyStore.getCertificate("cardCert"));
 															
+		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+
+		KeyAgreement keyAgreementLCP = KeyAgreement.getInstance("ECDH", "BC");
+		ECPublicKey cardPublicKey = (ECPublicKey) MainLCP.getCardCert().getPublicKey();
+		
+		keyAgreementLCP.init(MainLCP.getPrivateKeyLCP());
+		keyAgreementLCP.doPhase(cardPublicKey, true);
+
+		MessageDigest hash = MessageDigest.getInstance("SHA1", "BC");
+		byte[] hashKey = hash.digest(keyAgreementLCP.generateSecret());
+		
+		SecretKeyFactory skf = SecretKeyFactory.getInstance("DES");
+		DESKeySpec desSpec = new DESKeySpec(hashKey);
+		SecretKey secretKey = skf.generateSecret(desSpec);
+		
+		System.out.println("symmetric key with card = " + new BigInteger(1,secretKey.getEncoded()).toString(16));
 		
 	}
 
@@ -73,12 +98,12 @@ public class MainLCP {
 	}
 
 
-	public static PublicKey getPublicKeyLCP() {
+	public static ECPublicKey getPublicKeyLCP() {
 		return publicKeyLCP;
 	}
 
 
-	public static void setPublicKeyLCP(PublicKey publicKeyLCP) {
+	public static void setPublicKeyLCP(ECPublicKey publicKeyLCP) {
 		MainLCP.publicKeyLCP = publicKeyLCP;
 	}
 
