@@ -10,10 +10,13 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -43,7 +46,8 @@ public class Client {
 	//private static final byte DECRYPT_DATA_LCP_INS = 0x04;
 	private static final byte SET_ID_SHOP_INS = 0x05;
 	private static final byte SET_PSEUDONIEM_INS = 0x06;
-	
+	private static final byte GET_PART1_CERTIFICATE = 0x07;
+	private static final byte GET_PART2_CERTIFICATE = 0x08;
 	
 	
 	private final static short SW_VERIFICATION_FAILED = 0x6300;
@@ -53,7 +57,9 @@ public class Client {
 	/**
 	 * @param args
 	 */
-	
+	public static byte[] cardCertificate ={
+			(byte) 0x30, (byte) 0x82, (byte) 0x01, (byte) 0x03, (byte) 0x30, (byte) 0x81, (byte) 0xbb, (byte) 0x02, (byte) 0x01, (byte) 0x02, (byte) 0x30, (byte) 0x09, (byte) 0x06, (byte) 0x07, (byte) 0x2a, (byte) 0x86, (byte) 0x48, (byte) 0xce, (byte) 0x3d, (byte) 0x04, (byte) 0x01, (byte) 0x30, (byte) 0x1e, (byte) 0x31, (byte) 0x1c, (byte) 0x30, (byte) 0x1a, (byte) 0x06, (byte) 0x03, (byte) 0x55, (byte) 0x04, (byte) 0x03, (byte) 0x13, (byte) 0x13, (byte) 0x43, (byte) 0x41, (byte) 0x20, (byte) 0x63, (byte) 0x61, (byte) 0x72, (byte) 0x64, (byte) 0x20, (byte) 0x63, (byte) 0x65, (byte) 0x72, (byte) 0x74, (byte) 0x69, (byte) 0x66, (byte) 0x69, (byte) 0x63, (byte) 0x61, (byte) 0x74, (byte) 0x65, (byte) 0x30, (byte) 0x20, (byte) 0x17, (byte) 0x0d, (byte) 0x31, (byte) 0x36, (byte) 0x30, (byte) 0x33, (byte) 0x33, (byte) 0x31, (byte) 0x31, (byte) 0x33, (byte) 0x33, (byte) 0x34, (byte) 0x35, (byte) 0x33, (byte) 0x5a, (byte) 0x18, (byte) 0x0f, (byte) 0x33, (byte) 0x39, (byte) 0x31, (byte) 0x37, (byte) 0x30, (byte) 0x31, (byte) 0x33, (byte) 0x31, (byte) 0x32, (byte) 0x32, (byte) 0x35, (byte) 0x39, (byte) 0x35, (byte) 0x39, (byte) 0x5a, (byte) 0x30, (byte) 0x1e, (byte) 0x31, (byte) 0x1c, (byte) 0x30, (byte) 0x1a, (byte) 0x06, (byte) 0x03, (byte) 0x55, (byte) 0x04, (byte) 0x03, (byte) 0x13, (byte) 0x13, (byte) 0x43, (byte) 0x41, (byte) 0x20, (byte) 0x63, (byte) 0x61, (byte) 0x72, (byte) 0x64, (byte) 0x20, (byte) 0x63, (byte) 0x65, (byte) 0x72, (byte) 0x74, (byte) 0x69, (byte) 0x66, (byte) 0x69, (byte) 0x63, (byte) 0x61, (byte) 0x74, (byte) 0x65, (byte) 0x30, (byte) 0x49, (byte) 0x30, (byte) 0x13, (byte) 0x06, (byte) 0x07, (byte) 0x2a, (byte) 0x86, (byte) 0x48, (byte) 0xce, (byte) 0x3d, (byte) 0x02, (byte) 0x01, (byte) 0x06, (byte) 0x08, (byte) 0x2a, (byte) 0x86, (byte) 0x48, (byte) 0xce, (byte) 0x3d, (byte) 0x03, (byte) 0x01, (byte) 0x01, (byte) 0x03, (byte) 0x32, (byte) 0x00, (byte) 0x04, (byte) 0x22, (byte) 0x11, (byte) 0x21, (byte) 0xbd, (byte) 0x7d, (byte) 0xf3, (byte) 0x47, (byte) 0xfd, (byte) 0xfe, (byte) 0x3e, (byte) 0x89, (byte) 0x5d, (byte) 0xe0, (byte) 0x02, (byte) 0x65, (byte) 0xb3, (byte) 0x5c, (byte) 0x49, (byte) 0x91, (byte) 0x28, (byte) 0x71, (byte) 0x66, (byte) 0x2e, (byte) 0x29, (byte) 0xa3, (byte) 0xdf, (byte) 0x73, (byte) 0x5a, (byte) 0x52, (byte) 0x87, (byte) 0x50, (byte) 0x79, (byte) 0xd7, (byte) 0x5c, (byte) 0x3d, (byte) 0x56, (byte) 0x70, (byte) 0x76, (byte) 0xca, (byte) 0xaf, (byte) 0xad, (byte) 0x2e, (byte) 0xaf, (byte) 0x07, (byte) 0xc3, (byte) 0xa4, (byte) 0x76, (byte) 0xdf, (byte) 0x30, (byte) 0x09, (byte) 0x06, (byte) 0x07, (byte) 0x2a, (byte) 0x86, (byte) 0x48, (byte) 0xce, (byte) 0x3d, (byte) 0x04, (byte) 0x01, (byte) 0x03, (byte) 0x38, (byte) 0x00, (byte) 0x30, (byte) 0x35, (byte) 0x02, (byte) 0x19, (byte) 0x00, (byte) 0xe1, (byte) 0x10, (byte) 0x53, (byte) 0x30, (byte) 0xbb, (byte) 0x7a, (byte) 0x1a, (byte) 0xd1, (byte) 0x90, (byte) 0x15, (byte) 0xca, (byte) 0x3d, (byte) 0xe8, (byte) 0x13, (byte) 0x87, (byte) 0x5c, (byte) 0xaf, (byte) 0x81, (byte) 0xb0, (byte) 0x32, (byte) 0xe7, (byte) 0x30, (byte) 0x56, (byte) 0x22, (byte) 0x02, (byte) 0x18, (byte) 0x30, (byte) 0x02, (byte) 0x12, (byte) 0xa9, (byte) 0x01, (byte) 0xf6, (byte) 0x6e, (byte) 0x35, (byte) 0xce, (byte) 0xba, (byte) 0x25, (byte) 0x35, (byte) 0xd6, (byte) 0x7e, (byte) 0x9f, (byte) 0xf7, (byte) 0x79, (byte) 0xe5, (byte) 0x8f, (byte) 0xc2, (byte) 0x69, (byte) 0x23, (byte) 0x2c, (byte) 0x41
+	};
 	private static byte[] publicKeyParameterQFromLCP = new byte[]{
 			(byte) 0x04, (byte) 0xa9, (byte) 0xfe, (byte) 0x35, (byte) 0x45, (byte) 0xf0, 
 			(byte) 0xaf, (byte) 0x79, (byte) 0x60, (byte) 0x8f, (byte) 0xd5, (byte) 0x79, 
@@ -169,29 +175,19 @@ public class Client {
 		
 		try {
 			
-			CommandAPDU a;
-			ResponseAPDU r;
+			CommandAPDU a = null;
+			ResponseAPDU r = null;
 
 			//Send PIN
-			a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00,new byte[]{0x01,0x02,0x03,0x04});
-			r = c.transmit(a);
-
-			System.out.println(r);
-			if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("PIN INVALID");
-			else if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
-			System.out.println("PIN Verified");
-			System.out.println();
+			byte[] pin = new byte[]{0x01,0x02,0x03,0x04};
+			loginCard(a,r,c,pin);
+			
 			
 			//KEY AGREEMENT WITH LCP, set DES key and generate cipher in the java card 
-			KeyFactory kf = KeyFactory.getInstance("EC","BC"); // or "EC" or whatever
-			a = new CommandAPDU(IDENTITY_CARD_CLA, KEY_AGREEMENT_LCP_INS , (byte)(publicKeyParameterQFromLCP.length &0xff) , 0x00,publicKeyParameterQFromLCP);
-			r = c.transmit(a);
-			byte[] symmetricKey = r.getData();
-			//System.out.println("serialnumber = " + serialNumber);
-			System.out.println(r);
-			System.out.println("symmetric key with LCP = " + new BigInteger(1,symmetricKey).toString(16));
-			System.out.println();
+			byte[]  symmetrickey = keyAgreementLCPAndCard(a,r,c);
 			
+			//opvragen van het certificaat van de kaart
+			requestCertificate(a, r, c);
 			
 			//SEND data to encrypt on java card
 			/*byte[] data = new byte[]{'t','e','s','t','t','e','s','t'};
@@ -224,15 +220,7 @@ public class Client {
 			System.out.println();
 			*/
 			
-			/*byte[] data = new byte[]{'t','e','s','t','t','e','s','t'};
-			DESKeySpec dks = new DESKeySpec(symmetricKey);
-			SecretKeyFactory skf = SecretKeyFactory.getInstance("DES");
-			SecretKey desKey = skf.generateSecret(dks);
-			Cipher encryptCipher = Cipher.getInstance("DES/ECB/NoPadding ");
-			encryptCipher.init(Cipher.ENCRYPT_MODE, desKey);
-			byte[] textinCipher = encryptCipher.doFinal(data);
-			System.out.println("encrypted data from client = " + new String(textinCipher));
-			System.out.println();*/
+
 			
 			//kiezen bij welke winkel te registreren
 			System.out.print("winkelkeuze = ");
@@ -257,16 +245,28 @@ public class Client {
 				break;
 			}
 			
-			//versturen van winkelkeuze naar de kaart
-			a = new CommandAPDU(IDENTITY_CARD_CLA, SET_ID_SHOP_INS, (byte) (winkelKeuze.length&0xff), 0x00,winkelKeuze);
-			r = c.transmit(a);
-			System.out.println(r);
+			//-----------------------------------------------------------------------
+			//DIT GEDEELTE IS ENKEL VOOR TE TESTEN VOOR DE PSEUDONIEM-> MAG LATER WEG
+			byte[] data = new byte[]{'t','e','s','t','t','e','s','t'};
+			DESKeySpec dks = new DESKeySpec(symmetrickey);
+			SecretKeyFactory skf = SecretKeyFactory.getInstance("DES");
+			SecretKey desKey = skf.generateSecret(dks);
+			Cipher encryptCipher = Cipher.getInstance("DES/ECB/NoPadding ");
+			encryptCipher.init(Cipher.ENCRYPT_MODE, desKey);
+			byte[] textinCipher = encryptCipher.doFinal(data);
+			System.out.println("encrypted data from client = " + new String(textinCipher));
+			System.out.println();
+			//EINDE GEDEELTE
+			//-----------------------------------------------------------------------
 			
-			//setten van pseudoniem in de kaar
-			byte []pseudoniem = new byte[]{};
-			a = new CommandAPDU(IDENTITY_CARD_CLA, SET_PSEUDONIEM_INS, (byte) (pseudoniem.length&0xff), 0x00,pseudoniem);
-			r = c.transmit(a);
-			System.out.println(r);
+			
+			//versturen van winkelkeuze naar de kaart
+			//setten van pseudoniem in de kaart 
+			//TODO TEXTINCIPHER MOET HET EFFECTIEVE PSEUDONIEM VAN DE LCP WORDEN!!!!!
+			setShopIdAndPseudoniem(a,r,c,winkelKeuze,textinCipher);
+
+			
+
 
 			
 			/*out.writeObject(winkelKeuze);
@@ -288,6 +288,59 @@ public class Client {
 
 
 	}
+	
+	private static void loginCard(CommandAPDU a, ResponseAPDU r, IConnection c, byte[] pin) throws Exception{
+		a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00,new byte[]{0x01,0x02,0x03,0x04});
+		r = c.transmit(a);
+
+		System.out.println(r);
+		if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("PIN INVALID");
+		else if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
+		System.out.println("PIN Verified");
+		System.out.println();
+	}
+	
+	private static byte[] keyAgreementLCPAndCard(CommandAPDU a, ResponseAPDU r, IConnection c) throws Exception{
+		KeyFactory kf = KeyFactory.getInstance("EC","BC"); // or "EC" or whatever
+		a = new CommandAPDU(IDENTITY_CARD_CLA, KEY_AGREEMENT_LCP_INS , (byte)(publicKeyParameterQFromLCP.length &0xff) , 0x00,publicKeyParameterQFromLCP);
+		r = c.transmit(a);
+		byte[] symmetricKey = r.getData();
+		//System.out.println("serialnumber = " + serialNumber);
+		System.out.println(r);
+		System.out.println("symmetric key with LCP = " + new BigInteger(1,symmetricKey).toString(16));
+		System.out.println();
+		return symmetricKey;
+	}
+	
+	private static byte[] requestCertificate(CommandAPDU a, ResponseAPDU r, IConnection c) throws Exception{
+		ByteBuffer bb = ByteBuffer.allocate(263);
+		byte[] certificate = new byte[263];
+		a = new CommandAPDU(IDENTITY_CARD_CLA, GET_PART1_CERTIFICATE , 0x00 , 0x00,new byte[]{(byte)0xff});
+		r = c.transmit(a);
+		System.out.println("part1 " + r);
+		bb.put(r.getData());
+		a = new CommandAPDU(IDENTITY_CARD_CLA, GET_PART2_CERTIFICATE , 0x00 , 0x00,new byte[]{(byte)0xff});
+		r = c.transmit(a);
+		System.out.println("part2 " + r);
+		bb.put(r.getData());
+		certificate = bb.array();
+		System.out.println("certificaat = " + new BigInteger(1,certificate).toString(16));
+		return certificate;
+	}
+	
+	private static void setShopIdAndPseudoniem(CommandAPDU a, ResponseAPDU r, IConnection c,byte[] shopId, byte[] textinCipher) throws Exception{
+		//versturen van winkelkeuze naar de kaart
+		a = new CommandAPDU(IDENTITY_CARD_CLA, SET_ID_SHOP_INS, (byte) (shopId.length&0xff), 0x00,shopId);
+		r = c.transmit(a);
+		System.out.println(r);
+		
+		//setten van pseudoniem in de kaart
+		byte []pseudoniem = textinCipher;
+		a = new CommandAPDU(IDENTITY_CARD_CLA, SET_PSEUDONIEM_INS, (byte) (pseudoniem.length&0xff), 0x00,pseudoniem);
+		r = c.transmit(a);
+		System.out.println(r);
+	}
+	
 	private static short byteToShort(byte b) {
 		return (short) (b & 0xff);
 	}

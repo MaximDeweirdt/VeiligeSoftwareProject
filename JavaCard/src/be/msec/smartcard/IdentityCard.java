@@ -20,6 +20,11 @@ import javacard.security.PublicKey;
 import javacardx.crypto.Cipher;
 
 public class IdentityCard extends Applet {
+	public static byte[] cardCertificate ={
+			(byte) 0x30, (byte) 0x82, (byte) 0x01, (byte) 0x03, (byte) 0x30, (byte) 0x81, (byte) 0xbb, (byte) 0x02, (byte) 0x01, (byte) 0x02, (byte) 0x30, (byte) 0x09, (byte) 0x06, (byte) 0x07, (byte) 0x2a, (byte) 0x86, (byte) 0x48, (byte) 0xce, (byte) 0x3d, (byte) 0x04, (byte) 0x01, (byte) 0x30, (byte) 0x1e, (byte) 0x31, (byte) 0x1c, (byte) 0x30, (byte) 0x1a, (byte) 0x06, (byte) 0x03, (byte) 0x55, (byte) 0x04, (byte) 0x03, (byte) 0x13, (byte) 0x13, (byte) 0x43, (byte) 0x41, (byte) 0x20, (byte) 0x63, (byte) 0x61, (byte) 0x72, (byte) 0x64, (byte) 0x20, (byte) 0x63, (byte) 0x65, (byte) 0x72, (byte) 0x74, (byte) 0x69, (byte) 0x66, (byte) 0x69, (byte) 0x63, (byte) 0x61, (byte) 0x74, (byte) 0x65, (byte) 0x30, (byte) 0x20, (byte) 0x17, (byte) 0x0d, (byte) 0x31, (byte) 0x36, (byte) 0x30, (byte) 0x33, (byte) 0x33, (byte) 0x31, (byte) 0x31, (byte) 0x33, (byte) 0x33, (byte) 0x34, (byte) 0x35, (byte) 0x33, (byte) 0x5a, (byte) 0x18, (byte) 0x0f, (byte) 0x33, (byte) 0x39, (byte) 0x31, (byte) 0x37, (byte) 0x30, (byte) 0x31, (byte) 0x33, (byte) 0x31, (byte) 0x32, (byte) 0x32, (byte) 0x35, (byte) 0x39, (byte) 0x35, (byte) 0x39, (byte) 0x5a, (byte) 0x30, (byte) 0x1e, (byte) 0x31, (byte) 0x1c, (byte) 0x30, (byte) 0x1a, (byte) 0x06, (byte) 0x03, (byte) 0x55, (byte) 0x04, (byte) 0x03, (byte) 0x13, (byte) 0x13, (byte) 0x43, (byte) 0x41, (byte) 0x20, (byte) 0x63, (byte) 0x61, (byte) 0x72, (byte) 0x64, (byte) 0x20, (byte) 0x63, (byte) 0x65, (byte) 0x72, (byte) 0x74, (byte) 0x69, (byte) 0x66, (byte) 0x69, (byte) 0x63, (byte) 0x61, (byte) 0x74, (byte) 0x65, (byte) 0x30, (byte) 0x49, (byte) 0x30, (byte) 0x13, (byte) 0x06, (byte) 0x07, (byte) 0x2a, (byte) 0x86, (byte) 0x48, (byte) 0xce, (byte) 0x3d, (byte) 0x02, (byte) 0x01, (byte) 0x06, (byte) 0x08, (byte) 0x2a, (byte) 0x86, (byte) 0x48, (byte) 0xce, (byte) 0x3d, (byte) 0x03, (byte) 0x01, (byte) 0x01, (byte) 0x03, (byte) 0x32, (byte) 0x00, (byte) 0x04, (byte) 0x22, (byte) 0x11, (byte) 0x21, (byte) 0xbd, (byte) 0x7d, (byte) 0xf3, (byte) 0x47, (byte) 0xfd, (byte) 0xfe, (byte) 0x3e, (byte) 0x89, (byte) 0x5d, (byte) 0xe0, (byte) 0x02, (byte) 0x65, (byte) 0xb3, (byte) 0x5c, (byte) 0x49, (byte) 0x91, (byte) 0x28, (byte) 0x71, (byte) 0x66, (byte) 0x2e, (byte) 0x29, (byte) 0xa3, (byte) 0xdf, (byte) 0x73, (byte) 0x5a, (byte) 0x52, (byte) 0x87, (byte) 0x50, (byte) 0x79, (byte) 0xd7, (byte) 0x5c, (byte) 0x3d, (byte) 0x56, (byte) 0x70, (byte) 0x76, (byte) 0xca, (byte) 0xaf, (byte) 0xad, (byte) 0x2e, (byte) 0xaf, (byte) 0x07, (byte) 0xc3, (byte) 0xa4, (byte) 0x76, (byte) 0xdf, (byte) 0x30, (byte) 0x09, (byte) 0x06, (byte) 0x07, (byte) 0x2a, (byte) 0x86, (byte) 0x48, (byte) 0xce, (byte) 0x3d, (byte) 0x04, (byte) 0x01, (byte) 0x03, (byte) 0x38, (byte) 0x00, (byte) 0x30, (byte) 0x35, (byte) 0x02, (byte) 0x19, (byte) 0x00, (byte) 0xe1, (byte) 0x10, (byte) 0x53, (byte) 0x30, (byte) 0xbb, (byte) 0x7a, (byte) 0x1a, (byte) 0xd1, (byte) 0x90, (byte) 0x15, (byte) 0xca, (byte) 0x3d, (byte) 0xe8, (byte) 0x13, (byte) 0x87, (byte) 0x5c, (byte) 0xaf, (byte) 0x81, (byte) 0xb0, (byte) 0x32, (byte) 0xe7, (byte) 0x30, (byte) 0x56, (byte) 0x22, (byte) 0x02, (byte) 0x18, (byte) 0x30, (byte) 0x02, (byte) 0x12, (byte) 0xa9, (byte) 0x01, (byte) 0xf6, (byte) 0x6e, (byte) 0x35, (byte) 0xce, (byte) 0xba, (byte) 0x25, (byte) 0x35, (byte) 0xd6, (byte) 0x7e, (byte) 0x9f, (byte) 0xf7, (byte) 0x79, (byte) 0xe5, (byte) 0x8f, (byte) 0xc2, (byte) 0x69, (byte) 0x23, (byte) 0x2c, (byte) 0x41
+	};
+
+	
 	private final static byte IDENTITY_CARD_CLA = (byte) 0x80;
 
 	private static final byte VALIDATE_PIN_INS = 0x01;
@@ -29,6 +34,8 @@ public class IdentityCard extends Applet {
 	//private static final byte DECRYPT_DATA_LCP_INS = 0x04;
 	private static final byte SET_ID_SHOP_INS = 0x05;
 	private static final byte SET_PSEUDONIEM_INS = 0x06;
+	private static final byte GET_PART1_CERTIFICATE = 0x07;
+	private static final byte GET_PART2_CERTIFICATE = 0x08;
 	
 	private final static byte PIN_TRY_LIMIT = (byte) 0x03;
 	private final static byte PIN_SIZE = (byte) 0x04;
@@ -128,6 +135,12 @@ public class IdentityCard extends Applet {
 		case SET_PSEUDONIEM_INS:
 			safePseudoniemData(apdu);
 			break;
+		case GET_PART1_CERTIFICATE:
+			sendPart1Certificate(apdu);
+			break;
+		case GET_PART2_CERTIFICATE:
+			sendPart2Certificate(apdu);
+			break;
 		// If no matching instructions are found it is indicated in the status
 		// word of the response.
 		// This can be done by using this method. As an argument a short is
@@ -139,36 +152,62 @@ public class IdentityCard extends Applet {
 		}
 	}
 
-	private void safePseudoniemData(APDU apdu) {
-		byte[] buffer = apdu.getBuffer();
-		short dataLength = apdu.setIncomingAndReceive();
-		short length = buffer[ISO7816.OFFSET_P1];
-		byte[] pseudoniemEncrypted = new byte[length];
-		Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, pseudoniemEncrypted, (short) 0, length);
-		
-		byte[]pseudoniem = decryptDataLCP(pseudoniemEncrypted);
-		
-		if(idShop == (short)0){
-			pseudoniemColruyt = pseudoniem;
-		}else if(idShop == (short)1){
-			//NOG TE SCHRIJVEN
+	private void sendPart1Certificate(APDU apdu) {
+		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+		else{
+			apdu.setIncomingAndReceive();
+			apdu.setOutgoing();
+			apdu.setOutgoingLength((short) 240);
+			apdu.sendBytesLong(cardCertificate, (short) 0, (short) 240);
 		}
-		
-		apdu.setOutgoing();
-		apdu.setOutgoingLength((short) length);
-		apdu.sendBytesLong(pseudoniem, (short) 0, (short) length);
+	}
+
+	private void sendPart2Certificate(APDU apdu) {
+		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+		else{
+			apdu.setIncomingAndReceive();
+			apdu.setOutgoing();
+			apdu.setOutgoingLength((short) 23);
+			apdu.sendBytesLong(cardCertificate, (short) 240, (short) 23);
+		}
+	}
+	
+	private void safePseudoniemData(APDU apdu) {
+		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+		else{
+			byte[] buffer = apdu.getBuffer();
+			short dataLength = apdu.setIncomingAndReceive();
+			short length = buffer[ISO7816.OFFSET_P1];
+			byte[] pseudoniemEncrypted = new byte[length];
+			Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, pseudoniemEncrypted, (short) 0, length);
+			
+			byte[]pseudoniem = decryptDataLCP(pseudoniemEncrypted);
+			
+			if(idShop == (short)0){
+				pseudoniemColruyt = pseudoniem;
+			}else if(idShop == (short)1){
+				//NOG TE SCHRIJVEN
+			}
+			
+			apdu.setOutgoing();
+			apdu.setOutgoingLength((short) length);
+			apdu.sendBytesLong(pseudoniem, (short) 0, (short) length);
+		}
 	}
 	
 	
 	private void setIDshop(APDU apdu) {
-		byte[] buffer = apdu.getBuffer();
-		short dataLength = apdu.setIncomingAndReceive();
-		byte[] idBytes = new byte[2];
-		Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, idBytes, (short) 0, (short) 2);
-		idShop = byteArrayToShort(idBytes);
-		apdu.setOutgoing();
-		apdu.setOutgoingLength((short) 2);
-		apdu.sendBytesLong(idBytes, (short) 0, (short) 2);
+		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+		else{	
+			byte[] buffer = apdu.getBuffer();
+			short dataLength = apdu.setIncomingAndReceive();
+			byte[] idBytes = new byte[2];
+			Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, idBytes, (short) 0, (short) 2);
+			idShop = byteArrayToShort(idBytes);
+			apdu.setOutgoing();
+			apdu.setOutgoingLength((short) 2);
+			apdu.sendBytesLong(idBytes, (short) 0, (short) 2);
+		}
 	}
 
 	private byte[] decryptDataLCP(byte[] dataEncrypted){
