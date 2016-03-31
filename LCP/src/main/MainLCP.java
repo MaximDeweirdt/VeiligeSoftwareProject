@@ -6,7 +6,6 @@ import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.MessageDigest;
-import java.security.PublicKey;
 import java.security.Security;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -17,9 +16,9 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.DESKeySpec;
 
 import java.security.cert.Certificate;
-import java.security.interfaces.ECPublicKey;
 
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
+import org.bouncycastle.jce.interfaces.ECPublicKey;
 
 import socketListeners.RegisterSocketListenerThread;
 import socketListeners.VerificationSocketListenerThread;
@@ -71,7 +70,7 @@ public class MainLCP {
 		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 
 		KeyAgreement keyAgreementLCP = KeyAgreement.getInstance("ECDH", "BC");
-		ECPublicKey cardPublicKey = (ECPublicKey) MainLCP.getCardCert().getPublicKey();
+		ECPublicKey cardPublicKey = (ECPublicKey)  kf.generatePublic(new X509EncodedKeySpec(MainLCP.getCardCert().getPublicKey().getEncoded()));
 		
 		keyAgreementLCP.init(MainLCP.getPrivateKeyLCP());
 		keyAgreementLCP.doPhase(cardPublicKey, true);
