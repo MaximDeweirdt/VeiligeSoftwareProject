@@ -28,6 +28,8 @@ public class MainLCP {
 	private static ECPrivateKey privateKeyLCP;
 	private static ECPublicKey publicKeyLCP;
 	private static Certificate cardCert;
+	private static SecretKey secretKey;
+	
 	public static void main(String[] args) throws Exception {
 		
 		
@@ -77,12 +79,14 @@ public class MainLCP {
 
 		MessageDigest hash = MessageDigest.getInstance("SHA1", "BC");
 		byte[] hashKey = hash.digest(keyAgreementLCP.generateSecret());
+		System.out.println("symmetric key with card = " + new BigInteger(1,((hash.digest(keyAgreementLCP.generateSecret())))).toString(16));
 		
 		SecretKeyFactory skf = SecretKeyFactory.getInstance("DES");
 		DESKeySpec desSpec = new DESKeySpec(hashKey);
-		SecretKey secretKey = skf.generateSecret(desSpec);
+		setSecretKey(skf.generateSecret(desSpec));
 		
-		System.out.println("symmetric key with card = " + new BigInteger(1,secretKey.getEncoded()).toString(16));
+//		System.out.println("symmetric key with card = " + new BigInteger(1,secretKey.getEncoded()).toString(16));
+		
 		
 	}
 
@@ -114,6 +118,16 @@ public class MainLCP {
 
 	public static void setCardCert(Certificate cardCert) {
 		MainLCP.cardCert = cardCert;
+	}
+
+
+	public static SecretKey getSecretKey() {
+		return secretKey;
+	}
+
+
+	public static void setSecretKey(SecretKey secretKey) {
+		MainLCP.secretKey = secretKey;
 	}
 }
 		

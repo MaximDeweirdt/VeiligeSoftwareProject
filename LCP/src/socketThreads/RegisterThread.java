@@ -38,6 +38,7 @@ public class RegisterThread extends Thread {
 			try {
 				while ((input = in.readObject()) != null&&!finishedCom) {
 					output = rp.processInput(input);
+					if(output.equals("close connection"))break;
 					out.writeObject(output);
 					out.reset();
 				}

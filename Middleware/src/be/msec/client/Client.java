@@ -101,7 +101,7 @@ public class Client {
 		String hostname = "localhost";
 		int portNumber = 4443;
 		
-		/*Socket socket = new Socket(hostname, portNumber);
+		Socket socket = new Socket(hostname, portNumber);
 		
 		ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
 		ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
@@ -109,7 +109,7 @@ public class Client {
 		Object ob;
 		
 		//dit mag hier niet uiteraard gewoon om te testen
-		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+		/*Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 		String directoryNaam = "keystore";
 		String bestandsNaam = "LCPcert";
 		try{
@@ -187,7 +187,10 @@ public class Client {
 			byte[]  symmetrickey = keyAgreementLCPAndCard(a,r,c);
 			
 			//opvragen van het certificaat van de kaart
-			requestCertificate(a, r, c);
+			byte[] cardCert = requestCertificate(a, r, c);
+			out.writeObject(cardCert);
+			
+			byte[] input = (byte[]) in.readObject();
 			
 			//SEND data to encrypt on java card
 			/*byte[] data = new byte[]{'t','e','s','t','t','e','s','t'};
@@ -231,23 +234,10 @@ public class Client {
 				winkelnummer = Integer.parseInt(SCANNER.nextLine());
 			}
 			
-			switch (winkelnummer) {
-			//aan de kaart het winkelcertificaat vragen en dat doorsturen?
-			//moet alleszins ook iets van de kaart zijn zodat het geencrypteerd doorgestuurd kan worden
-			case 1:
-				winkelKeuze = shortToByte((short)1);
-				break;
-			case 2:
-				winkelKeuze = shortToByte((short)2);
-				break;
-			default:
-				System.err.println("rip");
-				break;
-			}
-			
+			winkelKeuze = shortToByte((short)winkelnummer);
 			//-----------------------------------------------------------------------
 			//DIT GEDEELTE IS ENKEL VOOR TE TESTEN VOOR DE PSEUDONIEM-> MAG LATER WEG
-			byte[] data = new byte[]{'t','e','s','t','t','e','s','t'};
+			/*byte[] data = new byte[]{'t','e','s','t','t','e','s','t'};
 			DESKeySpec dks = new DESKeySpec(symmetrickey);
 			SecretKeyFactory skf = SecretKeyFactory.getInstance("DES");
 			SecretKey desKey = skf.generateSecret(dks);
@@ -255,16 +245,17 @@ public class Client {
 			encryptCipher.init(Cipher.ENCRYPT_MODE, desKey);
 			byte[] textinCipher = encryptCipher.doFinal(data);
 			System.out.println("encrypted data from client = " + new String(textinCipher));
-			System.out.println();
+			System.out.println();*/
 			//EINDE GEDEELTE
 			//-----------------------------------------------------------------------
 			
-			
+			out.writeObject(winkelnummer);
+			byte[] textinCipher = (byte[]) in.readObject();
 			//versturen van winkelkeuze naar de kaart
 			//setten van pseudoniem in de kaart 
 			//TODO TEXTINCIPHER MOET HET EFFECTIEVE PSEUDONIEM VAN DE LCP WORDEN!!!!!
 			setShopIdAndPseudoniem(a,r,c,winkelKeuze,textinCipher);
-
+			
 			
 
 
@@ -280,10 +271,11 @@ public class Client {
 			throw e;
 		}
 		finally {
+			out.writeObject("close connection");
 			c.close();  // close the connection with the card
 			
-			/*out.writeObject("stop");
-			socket.close();*/
+			//out.writeObject("stop");
+			socket.close();
 		}
 
 

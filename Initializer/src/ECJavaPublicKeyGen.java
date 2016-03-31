@@ -13,6 +13,7 @@ import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
 import java.security.Security;
 import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
@@ -51,13 +52,40 @@ import org.bouncycastle.x509.X509V1CertificateGenerator;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 public class ECJavaPublicKeyGen {
+	
+	public static byte[] privateKeyLCPBytes = new byte[]{
+			(byte) 0x30, (byte) 0x7b, (byte) 0x02, (byte) 0x01, (byte) 0x00, (byte) 0x30, 
+			(byte) 0x13, (byte) 0x06, (byte) 0x07, (byte) 0x2a, (byte) 0x86, (byte) 0x48, 
+			(byte) 0xce, (byte) 0x3d, (byte) 0x02, (byte) 0x01, (byte) 0x06, (byte) 0x08, 
+			(byte) 0x2a, (byte) 0x86, (byte) 0x48, (byte) 0xce, (byte) 0x3d, (byte) 0x03, 
+			(byte) 0x01, (byte) 0x01, (byte) 0x04, (byte) 0x61, (byte) 0x30, (byte) 0x5f, 
+			(byte) 0x02, (byte) 0x01, (byte) 0x01, (byte) 0x04, (byte) 0x18, (byte) 0x53, 
+			(byte) 0xad, (byte) 0x00, (byte) 0x6a, (byte) 0xaf, (byte) 0xfd, (byte) 0xca, 
+			(byte) 0x87, (byte) 0xb9, (byte) 0x58, (byte) 0xf2, (byte) 0x6e, (byte) 0x65, 
+			(byte) 0x87, (byte) 0x1d, (byte) 0xbc, (byte) 0xb0, (byte) 0xe6, (byte) 0x4a, 
+			(byte) 0xbe, (byte) 0xb2, (byte) 0x58, (byte) 0x69, (byte) 0x45, (byte) 0xa0, 
+			(byte) 0x0a, (byte) 0x06, (byte) 0x08, (byte) 0x2a, (byte) 0x86, (byte) 0x48, 
+			(byte) 0xce, (byte) 0x3d, (byte) 0x03, (byte) 0x01, (byte) 0x01, (byte) 0xa1, 
+			(byte) 0x34, (byte) 0x03, (byte) 0x32, (byte) 0x00, (byte) 0x04, (byte) 0xa9, 
+			(byte) 0xfe, (byte) 0x35, (byte) 0x45, (byte) 0xf0, (byte) 0xaf, (byte) 0x79, 
+			(byte) 0x60, (byte) 0x8f, (byte) 0xd5, (byte) 0x79, (byte) 0x09, (byte) 0xcb, 
+			(byte) 0x32, (byte) 0x9b, (byte) 0x77, (byte) 0xde, (byte) 0x96, (byte) 0x8a, 
+			(byte) 0x9c, (byte) 0x2e, (byte) 0x3f, (byte) 0x3c, (byte) 0x63, (byte) 0x8d, 
+			(byte) 0xc4, (byte) 0x36, (byte) 0x94, (byte) 0x3e, (byte) 0x62, (byte) 0x1c, 
+			(byte) 0x95, (byte) 0xb3, (byte) 0xa0, (byte) 0x4b, (byte) 0x3b, (byte) 0x90, 
+			(byte) 0xab, (byte) 0x0b, (byte) 0xdf, (byte) 0x14, (byte) 0x19, (byte) 0xba, 
+			(byte) 0x0a, (byte) 0xed, (byte) 0x4d, (byte) 0x90, (byte) 0x2c
+		};
+
 	public static void main(String[] args) throws Exception {
 		Security.addProvider(new BouncyCastleProvider());
-
+		KeyFactory kf = KeyFactory.getInstance("EC"); // or "EC" or whatever
+		PrivateKey privateKeyLCP = kf.generatePrivate(new PKCS8EncodedKeySpec(privateKeyLCPBytes));
+		
 		KeyPair kp = ECJavaPublicKeyGen.generateECCKeyPair();
 
-		/*String directoryNaam = "keystore";
-		String bestandsNaam = "Colruytcert";
+		String directoryNaam = "keystore";
+		String bestandsNaam = "DelhaizeCert";
 		char[] password = "kiwikiwi".toCharArray();
 		KeyStore keyStore = KeyStore.getInstance("JKS");
 		String fileName = directoryNaam + "/" + bestandsNaam + "";
@@ -69,27 +97,14 @@ public class ECJavaPublicKeyGen {
 		keyStore.load(in, "kiwikiwi".toCharArray());
 		in.close();
 		// Add the certificate
-		X509Certificate certificate = generateCertificate1(kp);
-		keyStore.setCertificateEntry("LCPcert", certificate);
+		X509Certificate certificate = generateCertificate(kp,privateKeyLCP);
+		keyStore.setCertificateEntry("DelhaizeCert", certificate);
 		// Save the new keystore contents
 		FileOutputStream out = new FileOutputStream(keystoreFile);
 		keyStore.store(out, password);
-		out.close();*/
-		
-		
-		/*// Store Public Key.
-		X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(kp.getPublic().getEncoded());
-		out = new FileOutputStream(keystoreFile);
-		out.write(x509EncodedKeySpec.getEncoded());
 		out.close();
-
-		// Store Private Key.
-		PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded());
-		out = new FileOutputStream(keystoreFile);
-		out.write(pkcs8EncodedKeySpec.getEncoded());
-		out.close();*/
-
-		// System.out.println(certificate);
+		
+		
 
 		ECPrivateKey pKey = (ECPrivateKey) kp.getPrivate();
 
@@ -121,7 +136,7 @@ public class ECJavaPublicKeyGen {
 		byte[] testPriv = priv.getEncoded();
 
 		byte[] testPub = pub.getEncoded();
-		KeyFactory kf = KeyFactory.getInstance("EC"); // or "EC" or whatever
+		
 		// PrivateKey privateK = kf.generatePrivate(new
 		// PKCS8EncodedKeySpec(lcpPrivateKey));
 		//ECPublicKey publicK = (ECPublicKey) kf.generatePublic(new X509EncodedKeySpec(testPub));
@@ -168,43 +183,16 @@ public class ECJavaPublicKeyGen {
 		System.out.println();
 	}
 
-	public static X509Certificate generateCertificate1(KeyPair keyPair)
-			throws InvalidKeyException, IllegalStateException, NoSuchProviderException,
-			NoSuchAlgorithmException, SignatureException, OperatorCreationException, CertificateException, IOException {
-		Date startDate = new Date();
-		Date expiryDate = new Date(2016, 12, 31, 23, 59, 59);
-		BigInteger serialNumber = new BigInteger("" + 3); // serial number for certificate
-		// keypair is the EC public/private key pair
-		X500Principal dnName = new X500Principal("CN=CA Colruy certificate");
-		ContentSigner signer = new JcaContentSignerBuilder("SHA1withECDSA").build(keyPair.getPrivate());
-
-		X509v1CertificateBuilder v1CertGen = new JcaX509v1CertificateBuilder(
-				dnName, 
-				serialNumber, 
-				startDate,
-				expiryDate, 
-				dnName, 
-				keyPair.getPublic()
-			);
-		X509CertificateHolder holder = v1CertGen.build(signer);
-		CertificateFactory cf = CertificateFactory.getInstance("X.509");  
-	    InputStream certIs = new ByteArrayInputStream(holder.getEncoded()); 
-	    X509Certificate  cert = (X509Certificate) cf.generateCertificate(certIs); 
-		
-	    System.out.println(cert);
-		return cert;
-	}
-
-	public static X509Certificate generateCertificate(KeyPair keyPair)
+	public static X509Certificate generateCertificate(KeyPair keyPair,PrivateKey LCPprivateKey)
 			throws InvalidKeyException, IllegalStateException, NoSuchProviderException, NoSuchAlgorithmException,
 			SignatureException, OperatorCreationException, CertificateException, IOException {
 		Date startDate = new Date();
 		Date expiryDate = new Date(2016, 12, 31, 23, 59, 59);
-		BigInteger serialNumber = new BigInteger("" + 2); // serial number for
+		BigInteger serialNumber = new BigInteger("" + 4); // serial number for
 															// certificate
 		// keypair is the EC public/private key pair
-		X500Principal dnName = new X500Principal("CN=CA LCP certificate");
-		ContentSigner signer = new JcaContentSignerBuilder("SHA1withECDSA").build(keyPair.getPrivate());
+		X500Principal dnName = new X500Principal("CN=CA Delhaize certificate");
+		ContentSigner signer = new JcaContentSignerBuilder("SHA1withECDSA").build(LCPprivateKey);
 
 		X509v1CertificateBuilder v1CertGen = new JcaX509v1CertificateBuilder(dnName, serialNumber, startDate,
 				expiryDate, dnName, keyPair.getPublic());
@@ -216,4 +204,5 @@ public class ECJavaPublicKeyGen {
 		System.out.println(cert);
 		return cert;
 	}
+
 }
