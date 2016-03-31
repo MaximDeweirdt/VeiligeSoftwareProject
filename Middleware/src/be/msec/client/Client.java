@@ -39,8 +39,8 @@ public class Client {
 	private static final byte VALIDATE_PIN_INS = 0x01;
 	
 	private static final byte KEY_AGREEMENT_LCP_INS = 0x02;
-	private static final byte ENCRYPT_DATA_LCP_INS = 0x03;
-	private static final byte DECRYPT_DATA_LCP_INS = 0x04;
+	//private static final byte ENCRYPT_DATA_LCP_INS = 0x03;
+	//private static final byte DECRYPT_DATA_LCP_INS = 0x04;
 	private static final byte SET_ID_SHOP_INS = 0x05;
 	private static final byte SET_PSEUDONIEM_INS = 0x06;
 	
@@ -194,7 +194,7 @@ public class Client {
 			
 			
 			//SEND data to encrypt on java card
-			byte[] data = new byte[]{'t','e','s','t','t','e','s','t'};
+			/*byte[] data = new byte[]{'t','e','s','t','t','e','s','t'};
 			a = new CommandAPDU(IDENTITY_CARD_CLA, ENCRYPT_DATA_LCP_INS, (byte) (data.length&0xff), 0x00,data);
 			r = c.transmit(a);
 			System.out.println(r);
@@ -222,8 +222,20 @@ public class Client {
 			byte[] text = encryptCipher.doFinal(textinCipher);
 			System.out.println("decrypted data from client = " + new String(text));
 			System.out.println();
+			*/
+			
+			/*byte[] data = new byte[]{'t','e','s','t','t','e','s','t'};
+			DESKeySpec dks = new DESKeySpec(symmetricKey);
+			SecretKeyFactory skf = SecretKeyFactory.getInstance("DES");
+			SecretKey desKey = skf.generateSecret(dks);
+			Cipher encryptCipher = Cipher.getInstance("DES/ECB/NoPadding ");
+			encryptCipher.init(Cipher.ENCRYPT_MODE, desKey);
+			byte[] textinCipher = encryptCipher.doFinal(data);
+			System.out.println("encrypted data from client = " + new String(textinCipher));
+			System.out.println();*/
 			
 			//kiezen bij welke winkel te registreren
+			System.out.print("winkelkeuze = ");
 			int winkelnummer = Integer.parseInt(SCANNER.nextLine());
 			byte[] winkelKeuze = "0".getBytes();
 			while (winkelnummer <= 0 || winkelnummer > 4) {
@@ -255,6 +267,7 @@ public class Client {
 			a = new CommandAPDU(IDENTITY_CARD_CLA, SET_PSEUDONIEM_INS, (byte) (pseudoniem.length&0xff), 0x00,pseudoniem);
 			r = c.transmit(a);
 			System.out.println(r);
+
 			
 			/*out.writeObject(winkelKeuze);
 			//hier komt het geencrypteerde certificaat met het pseudoniem dat op de kaart moet opgeslaan worden

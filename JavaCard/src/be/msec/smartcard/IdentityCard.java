@@ -25,8 +25,8 @@ public class IdentityCard extends Applet {
 	private static final byte VALIDATE_PIN_INS = 0x01;
 
 	private static final byte KEY_AGREEMENT_LCP_INS = 0x02;
-	private static final byte ENCRYPT_DATA_LCP_INS = 0x03;
-	private static final byte DECRYPT_DATA_LCP_INS = 0x04;
+	//private static final byte ENCRYPT_DATA_LCP_INS = 0x03;
+	//private static final byte DECRYPT_DATA_LCP_INS = 0x04;
 	private static final byte SET_ID_SHOP_INS = 0x05;
 	private static final byte SET_PSEUDONIEM_INS = 0x06;
 	
@@ -122,12 +122,6 @@ public class IdentityCard extends Applet {
 		case KEY_AGREEMENT_LCP_INS:
 			keyAgreementLCP(apdu);
 			break;
-		case ENCRYPT_DATA_LCP_INS:
-			encryptData(apdu);
-			break;
-		case DECRYPT_DATA_LCP_INS:
-			decryptDataLCP(apdu);
-			break;
 		case SET_ID_SHOP_INS:
 			setIDshop(apdu);
 			break;
@@ -149,8 +143,10 @@ public class IdentityCard extends Applet {
 		byte[] buffer = apdu.getBuffer();
 		short dataLength = apdu.setIncomingAndReceive();
 		short length = buffer[ISO7816.OFFSET_P1];
-		byte[] pseudoniem = new byte[length];
-		Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, pseudoniem, (short) 0, length);
+		byte[] pseudoniemEncrypted = new byte[length];
+		Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, pseudoniemEncrypted, (short) 0, length);
+		
+		byte[]pseudoniem = decryptDataLCP(pseudoniemEncrypted);
 		
 		if(idShop == (short)0){
 			pseudoniemColruyt = pseudoniem;
@@ -175,42 +171,18 @@ public class IdentityCard extends Applet {
 		apdu.sendBytesLong(idBytes, (short) 0, (short) 2);
 	}
 
-	private void decryptDataLCP(APDU apdu){
-		byte[] buffer = apdu.getBuffer();
-		short dataLength = apdu.setIncomingAndReceive();
-		short length = buffer[ISO7816.OFFSET_P1];
-		byte[] dataEncrypted = new byte[length];
-		Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, dataEncrypted, (short) 0, length);
-		
-		byte[] data = new byte[length];
+	private byte[] decryptDataLCP(byte[] dataEncrypted){
+		byte[] data = new byte[dataEncrypted.length];
 		cipherWithLCP.init(secretDesKeyWithLCP,Cipher.MODE_DECRYPT);
-		cipherWithLCP.doFinal(dataEncrypted, (short) 0 , length, data, (short) 0); 
-		
-		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
-		else{
-			apdu.setOutgoing();
-			apdu.setOutgoingLength((short) length);
-			apdu.sendBytesLong(data, (short) 0, (short) length);
-		}
+		cipherWithLCP.doFinal(dataEncrypted, (short) 0 , (short) dataEncrypted.length, data, (short) 0); 
+		return data;
 	}
 	
-	private void encryptData(APDU apdu){
-		byte[] buffer = apdu.getBuffer();
-		short dataLength = apdu.setIncomingAndReceive();
-		short length = buffer[ISO7816.OFFSET_P1];
-		byte[] data = new byte[length];
-		Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, data, (short) 0, length);
-		
-		byte[] encryptedData = new byte[length];
+	private byte[] encryptDataLCP(byte[] data){
+		byte[] encryptedData = new byte[data.length];
 		cipherWithLCP.init(secretDesKeyWithLCP,Cipher.MODE_ENCRYPT);
-		cipherWithLCP.doFinal(data, (short) 0 , length, encryptedData, (short) 0); 
-		
-		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
-		else{
-			apdu.setOutgoing();
-			apdu.setOutgoingLength((short) length);
-			apdu.sendBytesLong(encryptedData, (short) 0, (short) length);
-		}
+		cipherWithLCP.doFinal(data, (short) 0 , (short) data.length, encryptedData, (short) 0); 
+		return encryptedData;
 	}
 
 	private void keyAgreementLCP(APDU apdu) {
