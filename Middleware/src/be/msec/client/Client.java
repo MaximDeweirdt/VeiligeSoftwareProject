@@ -54,7 +54,7 @@ public class Client {
 	private static final byte SET_PSEUDONIEM_INS = 0x06;
 	private static final byte GET_PART1_CERTIFICATE = 0x07;
 	private static final byte GET_PART2_CERTIFICATE = 0x08;
-	
+	private static final byte CHECK_CERT_INS = 0x09;
 	
 	private final static short SW_VERIFICATION_FAILED = 0x6300;
 	private final static short SW_PIN_VERIFICATION_REQUIRED = 0x6301;
@@ -197,6 +197,10 @@ public class Client {
 			out.writeObject(cardCert);
 			
 			byte[] input = (byte[]) in.readObject();
+			boolean correctCert = checkCorrectCertificate(a,r,c,input);
+			if(correctCert==false){
+				loginCard(a,r,c,pin);
+			}
 			
 			//SEND data to encrypt on java card
 			/*byte[] data = new byte[]{'t','e','s','t','t','e','s','t'};
@@ -300,14 +304,59 @@ public class Client {
 
 	}
 	
-	private static void loginCard(CommandAPDU a, ResponseAPDU r, IConnection c, byte[] pin) throws Exception{
-		a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00,new byte[]{0x01,0x02,0x03,0x04});
+	private static boolean checkCorrectCertificate(CommandAPDU a, ResponseAPDU r, IConnection c, byte[] input) throws Exception {
+		a = new CommandAPDU(IDENTITY_CARD_CLA, CHECK_CERT_INS, (byte) (input.length&0xff), 0x00,input);
 		r = c.transmit(a);
-
 		System.out.println(r);
-		if (r.getSW()==SW_VERIFICATION_FAILED) throw new Exception("PIN INVALID");
-		else if(r.getSW()!=0x9000) throw new Exception("Exception on the card: " + r.getSW());
+		String response = new String(r.getData());
+		System.out.println(new String(response )+ " certificate");
+		if(!response.equals("accepted")){
+			return false;
+		}
+		else return true;
+	}
+
+	private static void loginCard(CommandAPDU a, ResponseAPDU r, IConnection c,byte[] pin) throws Exception{
+		boolean correctPin = false;
+		System.out.print("PIN (pin is 1234) = ");
+		String pinInput = SCANNER.nextLine();
+		byte[] p = new byte[]{
+				(byte)(Integer.parseInt("" + pinInput.charAt(0))),
+				(byte)(Integer.parseInt("" + pinInput.charAt(1))),
+				(byte)(Integer.parseInt("" + pinInput.charAt(2))),
+				(byte)(Integer.parseInt("" + pinInput.charAt(3))),
+		};
+		a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00,p);
+		r = c.transmit(a);
+		System.out.println(r);
+		if (r.getSW()==SW_VERIFICATION_FAILED)System.out.println("pin is incorrect");
+		else if(r.getSW()!=0x9000)System.out.println("pin is incorrect");
+		else correctPin = true;
 		System.out.println("PIN Verified");
+		
+		
+		System.out.println(r);
+		int tries = 1;
+
+		while(!correctPin && tries<3){
+			System.out.print("PIN (pin is 1234) = ");
+			pinInput = SCANNER.nextLine();
+			p = new byte[]{
+					(byte)(Integer.parseInt("" + pinInput.charAt(0))),
+					(byte)(Integer.parseInt("" + pinInput.charAt(1))),
+					(byte)(Integer.parseInt("" + pinInput.charAt(2))),
+					(byte)(Integer.parseInt("" + pinInput.charAt(3))),
+			};
+			System.out.println(p[1] + "  " + pin[1]);
+			a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00,p);
+			r = c.transmit(a);
+			System.out.println(r + "!!!!!!!");
+			if (r.getSW()==SW_VERIFICATION_FAILED)System.out.println("pin is incorrect");
+			else if(r.getSW()!=0x9000) System.out.println("pin is incorrect");
+			else correctPin = true;
+			tries++;
+		}
+		if(correctPin)System.out.println("PIN Verified");
 		System.out.println();
 	}
 	

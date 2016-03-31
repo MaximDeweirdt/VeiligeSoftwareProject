@@ -36,6 +36,7 @@ public class IdentityCard extends Applet {
 	private static final byte SET_PSEUDONIEM_INS = 0x06;
 	private static final byte GET_PART1_CERTIFICATE = 0x07;
 	private static final byte GET_PART2_CERTIFICATE = 0x08;
+	private static final byte CHECK_CERT_INS = 0x09;
 	
 	private final static byte PIN_TRY_LIMIT = (byte) 0x03;
 	private final static byte PIN_SIZE = (byte) 0x04;
@@ -141,6 +142,9 @@ public class IdentityCard extends Applet {
 		case GET_PART2_CERTIFICATE:
 			sendPart2Certificate(apdu);
 			break;
+		case CHECK_CERT_INS:
+			checkCertificateCorrect(apdu);
+			break;
 		// If no matching instructions are found it is indicated in the status
 		// word of the response.
 		// This can be done by using this method. As an argument a short is
@@ -149,6 +153,24 @@ public class IdentityCard extends Applet {
 		// 'ISO7816' class.
 		default:
 			ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
+		}
+	}
+
+	private void checkCertificateCorrect(APDU apdu) {
+		byte[] buffer = apdu.getBuffer();
+		short dataLength = apdu.setIncomingAndReceive();
+		
+		short length = byteToShort(buffer[ISO7816.OFFSET_P1]);
+		byte[] response = new byte[length];
+		Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, response, (short) 0, length);
+		byte[] checkCorrect = decryptDataLCP(response);
+		if(checkCorrect[0]!='a'){
+			pin.reset();
+		}
+		if(pin.isValidated()){
+			apdu.setOutgoing();
+			apdu.setOutgoingLength((short) checkCorrect.length);
+			apdu.sendBytesLong(checkCorrect, (short) 0, (short) checkCorrect.length);
 		}
 	}
 
