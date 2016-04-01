@@ -82,18 +82,34 @@ public class RegisterProtocol {
 			state = KIESWINKELSTATE;
 
 		} else if (state == KIESWINKELSTATE) {
-			int winkelNummer = (int) theInput;
+			byte[] input = (byte[]) theInput;
 			X509Certificate shopPseudoCert;
-			// byte[] decryptedInput = decryptInput(input);
+			byte[] decryptedInput = decryptInput(input);
+			short winkelNummer = byteArrayToShort(decryptedInput);
+			
 			switch (winkelNummer) {
 			case 1:
 				System.out.println("winkel 1 gekozen");
 				shopPseudoCert = makePseudonimCert("winkel1");
+				MainLCP.addNewVirtualCardCertList(shopPseudoCert);
 				theOutput = encryptOutput(shopPseudoCert.getEncoded());
 				break;
 			case 2:
 				System.out.println("winkel 2 gekozen");
 				shopPseudoCert = makePseudonimCert("winkel2");
+				MainLCP.addNewVirtualCardCertList(shopPseudoCert);
+				theOutput = encryptOutput(shopPseudoCert.getEncoded());
+				break;
+			case 3:
+				System.out.println("winkel 3 gekozen");
+				shopPseudoCert = makePseudonimCert("winkel3");
+				MainLCP.addNewVirtualCardCertList(shopPseudoCert);
+				theOutput = encryptOutput(shopPseudoCert.getEncoded());
+				break;
+			case 4:
+				System.out.println("winkel 4 gekozen");
+				shopPseudoCert = makePseudonimCert("winkel4");
+				MainLCP.addNewVirtualCardCertList(shopPseudoCert);
 				theOutput = encryptOutput(shopPseudoCert.getEncoded());
 				break;
 			default:
@@ -202,4 +218,19 @@ public class RegisterProtocol {
 		return ciphertext;
 	}
 
+	private static short byteToShort(byte b) {
+		return (short) (b & 0xff);
+	}
+
+	private static short byteArrayToShort(byte[] b) {
+		short value = (short) (((b[0] << 8)) | ((b[1] & 0xff)));
+		return value;
+	}
+
+	private static byte[] shortToByte(short s) {
+		byte[] shortByte = new byte[2];
+		shortByte[0] = (byte) ((s >> 8) & 0xff);
+		shortByte[1] = (byte) (s & 0xff);
+		return shortByte;
+	}
 }

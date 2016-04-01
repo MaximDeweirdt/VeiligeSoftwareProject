@@ -9,6 +9,11 @@ import java.security.MessageDigest;
 import java.security.Security;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
 
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
@@ -16,6 +21,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.DESKeySpec;
 
 import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
@@ -29,6 +35,7 @@ public class MainLCP {
 	private static ECPublicKey publicKeyLCP;
 	private static Certificate cardCert;
 	private static SecretKey secretKey;
+	private static Map<X509Certificate,Boolean> virtualCardCertList = new HashMap<X509Certificate, Boolean>();
 	
 	public static void main(String[] args) throws Exception {
 		
@@ -128,6 +135,15 @@ public class MainLCP {
 
 	public static void setSecretKey(SecretKey secretKey) {
 		MainLCP.secretKey = secretKey;
+	}
+
+
+	public static Map<X509Certificate, Boolean> getVirtualCardCertList() {
+		return virtualCardCertList;
+	}
+
+	public static void addNewVirtualCardCertList(X509Certificate virtualCardCert) {
+		MainLCP.virtualCardCertList.put(virtualCardCert, true);
 	}
 }
 		
