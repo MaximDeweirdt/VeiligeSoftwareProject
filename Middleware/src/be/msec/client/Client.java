@@ -190,9 +190,13 @@ public class Client {
 			ResponseAPDU r = null;
 
 			//Send PIN
-			byte[] pin = new byte[]{0x01,0x02,0x03,0x04};
-			gui.getPin();
-			loginCard(a,r,c,pin);
+			
+			int tries = 0;
+			boolean correctPin = false;
+			while(tries<3 && !correctPin){
+				String pin = gui.getPin();
+				correctPin = loginCard(a,r,c,pin);
+			}
 			
 			
 			//KEY AGREEMENT WITH LCP, set DES key and generate cipher in the java card 
@@ -204,6 +208,7 @@ public class Client {
 			
 			byte[] input = (byte[]) in.readObject();
 			boolean correctCert = checkCorrectCertificate(a,r,c,input);
+			String pin = "NULL"; // NOG TE DOEN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			if(correctCert==false){
 				loginCard(a,r,c,pin);
 			}
@@ -328,11 +333,11 @@ public class Client {
 		else return true;
 	}
 
-	private static void loginCard(CommandAPDU a, ResponseAPDU r, IConnection c,byte[] pin) throws Exception{
+	private static boolean loginCard(CommandAPDU a, ResponseAPDU r, IConnection c,String pin) throws Exception{
 		boolean correctPin = false;
-		System.out.print("PIN (pin is 1234) = ");
-		String pinInput = SCANNER.nextLine();
 		
+		System.out.print("PIN (pin is 1234) = ");
+		String pinInput = pin;
 		byte[] p = new byte[]{
 				(byte)(Integer.parseInt("" + pinInput.charAt(0))),
 				(byte)(Integer.parseInt("" + pinInput.charAt(1))),
@@ -341,36 +346,14 @@ public class Client {
 		};
 		a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00,p);
 		r = c.transmit(a);
-		System.out.println(r);
+		System.out.println(r + "!!!!!!!");
 		if (r.getSW()==SW_VERIFICATION_FAILED)System.out.println("pin is incorrect");
-		else if(r.getSW()!=0x9000)System.out.println("pin is incorrect");
+		else if(r.getSW()!=0x9000) System.out.println("pin is incorrect");
 		else correctPin = true;
-		System.out.println("PIN Verified");
-		
-		
-		System.out.println(r);
-		int tries = 1;
 
-		while(!correctPin && tries<3){
-			System.out.print("PIN (pin is 1234) = ");
-			pinInput = SCANNER.nextLine();
-			p = new byte[]{
-					(byte)(Integer.parseInt("" + pinInput.charAt(0))),
-					(byte)(Integer.parseInt("" + pinInput.charAt(1))),
-					(byte)(Integer.parseInt("" + pinInput.charAt(2))),
-					(byte)(Integer.parseInt("" + pinInput.charAt(3))),
-			};
-			System.out.println(p[1] + "  " + pin[1]);
-			a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00,p);
-			r = c.transmit(a);
-			System.out.println(r + "!!!!!!!");
-			if (r.getSW()==SW_VERIFICATION_FAILED)System.out.println("pin is incorrect");
-			else if(r.getSW()!=0x9000) System.out.println("pin is incorrect");
-			else correctPin = true;
-			tries++;
-		}
 		if(correctPin)System.out.println("PIN Verified");
-		System.out.println();
+		System.out.println(correctPin);
+		return correctPin;
 	}
 	
 	private static byte[] keyAgreementLCPAndCard(CommandAPDU a, ResponseAPDU r, IConnection c) throws Exception{
