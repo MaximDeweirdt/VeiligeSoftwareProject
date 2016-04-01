@@ -3,6 +3,7 @@ package be.msec.client;
 import be.msec.client.connection.Connection;
 import be.msec.client.connection.IConnection;
 import be.msec.client.connection.SimulatedConnection;
+import gui.MiddelwareGui;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -97,6 +98,7 @@ public class Client {
 		};
 	
 	public static void main(String[] args) throws Exception {
+		MiddelwareGui gui;
 		IConnection c;
 		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 		//Real Card:
@@ -179,6 +181,8 @@ public class Client {
 			e.printStackTrace();
 		}*/
 		
+		gui = new MiddelwareGui();
+		gui.setVisible(true);
 		
 		try {
 			
@@ -187,6 +191,7 @@ public class Client {
 
 			//Send PIN
 			byte[] pin = new byte[]{0x01,0x02,0x03,0x04};
+			gui.getPin();
 			loginCard(a,r,c,pin);
 			
 			
@@ -327,6 +332,7 @@ public class Client {
 		boolean correctPin = false;
 		System.out.print("PIN (pin is 1234) = ");
 		String pinInput = SCANNER.nextLine();
+		
 		byte[] p = new byte[]{
 				(byte)(Integer.parseInt("" + pinInput.charAt(0))),
 				(byte)(Integer.parseInt("" + pinInput.charAt(1))),
