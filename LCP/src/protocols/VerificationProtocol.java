@@ -86,7 +86,8 @@ public class VerificationProtocol {
 					cert.checkValidity();
 					cert.verify(MainLCP.getPublicKeyLCP());
 					System.out.println("signature is correct");
-					byte[] accepted = { 'a', 'c', 'c', 'e', 'p', 't', 'e', 'd' };
+					
+					byte[] accepted = getSimpleCert(cert);
 					theOutput = encryptOutput(accepted);
 				} catch (Exception e) {
 					System.err.println("signature isn't correct");
@@ -102,6 +103,28 @@ public class VerificationProtocol {
 
 		
 		return theOutput;
+	}
+
+
+	private byte[] getSimpleCert(X509Certificate cert) throws Exception {
+		KeyFactory kf = KeyFactory.getInstance("EC", "BC"); 
+		ECPublicKey certPublicKey = (ECPublicKey)  kf.generatePublic(new X509EncodedKeySpec(cert.getPublicKey().getEncoded()));
+		
+		byte[] qParameter = certPublicKey.getQ().getEncoded();
+		byte[] username = cert.getIssuerX500Principal().getEncoded();
+		byte[] serialNumber = cert.getSerialNumber().toByteArray();
+		
+//		int aLen = a.length;
+//		int bLen = b.length;
+		byte[] concat = new byte[qParameter.length + username.length];
+		System.arraycopy(qParameter, 0, concat, 0, qParameter.length);
+		System.arraycopy(username, 0, concat, qParameter.length, username.length);
+		
+		byte[] simpleCert = new byte[concat.length + serialNumber.length];
+		System.arraycopy(concat, 0, concat, 0, concat.length);
+		System.arraycopy(serialNumber, 0, concat, serialNumber.length, simpleCert.length);
+		
+		return simpleCert;
 	}
 
 
