@@ -55,6 +55,7 @@ public class Client {
 	private static final byte GET_PART1_CERTIFICATE = 0x07;
 	private static final byte GET_PART2_CERTIFICATE = 0x08;
 	private static final byte CHECK_CERT_INS = 0x09;
+	private static final byte ENCRYPT_SHOP_ID_INS = 0x11;
 	
 	private final static short SW_VERIFICATION_FAILED = 0x6300;
 	private final static short SW_PIN_VERIFICATION_REQUIRED = 0x6301;
@@ -258,8 +259,14 @@ public class Client {
 			System.out.println();*/
 			//EINDE GEDEELTE
 			//-----------------------------------------------------------------------
+			a = new CommandAPDU(IDENTITY_CARD_CLA, ENCRYPT_SHOP_ID_INS, (byte) (winkelKeuze.length&0xff), 0x00,winkelKeuze);
+			r = c.transmit(a);
+			byte[] encryptedShopId = r.getData();
+			System.out.println(r + "!!");
+			System.out.println(new BigInteger(1,r.getData()).toString(16));
 			
-			out.writeObject(winkelnummer);
+			
+			out.writeObject(encryptedShopId);
 			byte[] textinCipher = (byte[]) in.readObject();
 			System.out.println(new BigInteger(1,textinCipher).toString(16));
 			//versturen van winkelkeuze naar de kaart

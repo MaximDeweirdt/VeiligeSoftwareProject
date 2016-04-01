@@ -37,6 +37,7 @@ public class IdentityCard extends Applet {
 	private static final byte GET_PART1_CERTIFICATE = 0x07;
 	private static final byte GET_PART2_CERTIFICATE = 0x08;
 	private static final byte CHECK_CERT_INS = 0x09;
+	private static final byte ENCRYPT_SHOP_ID_INS = 0x11;
 	
 	private final static byte PIN_TRY_LIMIT = (byte) 0x03;
 	private final static byte PIN_SIZE = (byte) 0x04;
@@ -145,6 +146,9 @@ public class IdentityCard extends Applet {
 		case CHECK_CERT_INS:
 			checkCertificateCorrect(apdu);
 			break;
+		case ENCRYPT_SHOP_ID_INS:
+			encryptShopId(apdu);
+			break;
 		// If no matching instructions are found it is indicated in the status
 		// word of the response.
 		// This can be done by using this method. As an argument a short is
@@ -154,6 +158,26 @@ public class IdentityCard extends Applet {
 		default:
 			ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
 		}
+	}
+
+	private void encryptShopId(APDU apdu) {
+		byte[] buffer = apdu.getBuffer();
+		short dataLength = apdu.setIncomingAndReceive();
+		
+		short length = byteToShort(buffer[ISO7816.OFFSET_P1]);
+		byte[] shopIdByte = new byte[8];
+		Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, shopIdByte, (short) 0, length);
+		shopIdByte[2] = (byte) 0x00;
+		shopIdByte[3] = (byte) 0x00;
+		shopIdByte[4] = (byte) 0x00;
+		shopIdByte[5] = (byte) 0x00;
+		shopIdByte[6] = (byte) 0x00;
+		shopIdByte[7] = (byte) 0x00;
+		byte[] encryptedShopId = encryptDataLCP(shopIdByte);
+		
+		apdu.setOutgoing();
+		apdu.setOutgoingLength((short) encryptedShopId.length);
+		apdu.sendBytesLong(encryptedShopId, (short) 0, (short) encryptedShopId.length);
 	}
 
 	private void checkCertificateCorrect(APDU apdu) {
