@@ -28,6 +28,7 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v1CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509v1CertificateBuilder;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
+import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
@@ -37,9 +38,10 @@ import socketThreads.RegisterThread;
 
 public class RegisterProtocol {
 
-	private Cipher aesCipher;
+	private Cipher cipher;
 	private RegisterThread rt;
-
+	private SecretKey secretKey;
+	
 	public static final int TESTCONNECTIONSTATE = -1;
 
 	public static final int CHECKCERTIFICATESTATE = 0;
@@ -52,7 +54,7 @@ public class RegisterProtocol {
 	}
 
 	public Object processInput(Object theInput) throws Exception {
-		byte[] bye = { 'b', 'y', 'e', 'e', 'b', 'y', 'e', 'e' };
+
 		Object theOutput = null;
 
 		// byte[] decryptedInput = decryptInput(input);
@@ -60,8 +62,6 @@ public class RegisterProtocol {
 		if (theInput != null && theInput.toString().equals("close connection")) {
 
 			theOutput = "close connection";
-		} else if (state == TESTCONNECTIONSTATE) {
-
 		} else if (state == CHECKCERTIFICATESTATE) {
 			byte[] input = (byte[]) theInput;
 			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
@@ -72,14 +72,17 @@ public class RegisterProtocol {
 				cardCert.checkValidity();
 				cardCert.verify(MainLCP.getPublicKeyLCP());
 				System.out.println("signature is correct");
+				makeSecretKey(cardCert);
 				byte[] accepted = { 'a', 'c', 'c', 'e', 'p', 't', 'e', 'd' };
 				theOutput = encryptOutput(accepted);
+				state = KIESWINKELSTATE;
 			} catch (Exception e) {
 				System.err.println("signature isn't correct");
 				byte[] denied = { 'd', 'e', 'n', 'i', 'e', 'd', 'e', 'd' };
 				theOutput = encryptOutput(denied);
+				state = CHECKCERTIFICATESTATE;
 			}
-			state = KIESWINKELSTATE;
+			
 
 		} else if (state == KIESWINKELSTATE) {
 			byte[] input = (byte[]) theInput;
@@ -88,39 +91,57 @@ public class RegisterProtocol {
 			short winkelNummer = byteArrayToShort(decryptedInput);
 			
 			switch (winkelNummer) {
+			case 0:
+				System.out.println("winkel 0 gekozen");
+				shopPseudoCert = makePseudonimCert("winkel0");
+				MainLCP.addCertToList(shopPseudoCert);
+				theOutput = encryptOutput(shopPseudoCert.getEncoded());
+				break;
 			case 1:
 				System.out.println("winkel 1 gekozen");
 				shopPseudoCert = makePseudonimCert("winkel1");
-				MainLCP.addNewVirtualCardCertList(shopPseudoCert);
+				MainLCP.addCertToList(shopPseudoCert);
 				theOutput = encryptOutput(shopPseudoCert.getEncoded());
 				break;
 			case 2:
 				System.out.println("winkel 2 gekozen");
 				shopPseudoCert = makePseudonimCert("winkel2");
-				MainLCP.addNewVirtualCardCertList(shopPseudoCert);
+				MainLCP.addCertToList(shopPseudoCert);
 				theOutput = encryptOutput(shopPseudoCert.getEncoded());
 				break;
 			case 3:
 				System.out.println("winkel 3 gekozen");
 				shopPseudoCert = makePseudonimCert("winkel3");
-				MainLCP.addNewVirtualCardCertList(shopPseudoCert);
+				MainLCP.addCertToList(shopPseudoCert);
 				theOutput = encryptOutput(shopPseudoCert.getEncoded());
 				break;
-			case 4:
-				System.out.println("winkel 4 gekozen");
-				shopPseudoCert = makePseudonimCert("winkel4");
-				MainLCP.addNewVirtualCardCertList(shopPseudoCert);
-				theOutput = encryptOutput(shopPseudoCert.getEncoded());
-				break;
-			default:
-				theOutput = bye;
-
 			}
 			rt.finishedCom = true;
 		}
 
 		return theOutput;
 	}
+	
+	private void makeSecretKey(X509Certificate cert) throws Exception{
+		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+		
+		KeyFactory kf = KeyFactory.getInstance("EC", "BC"); 
+		KeyAgreement keyAgreementLCP = KeyAgreement.getInstance("ECDH", "BC");
+		ECPublicKey certPublicKey = (ECPublicKey)  kf.generatePublic(new X509EncodedKeySpec(cert.getPublicKey().getEncoded()));
+		
+		keyAgreementLCP.init(MainLCP.getPrivateKeyLCP());
+		keyAgreementLCP.doPhase(certPublicKey, true);
+
+		MessageDigest hash = MessageDigest.getInstance("SHA1", "BC");
+		byte[] hashKey = hash.digest(keyAgreementLCP.generateSecret());
+//		System.out.println("symmetric key with cert = " + new BigInteger(1,((hash.digest(keyAgreementLCP.generateSecret())))).toString(16));
+		
+		SecretKeyFactory skf = SecretKeyFactory.getInstance("DES");
+		DESKeySpec desSpec = new DESKeySpec(hashKey);
+		secretKey = skf.generateSecret(desSpec);
+		
+	}
+	
 
 	private X509Certificate makePseudonimCert(String shopName) throws Exception {
 		Date startDate = new Date();
@@ -166,13 +187,13 @@ public class RegisterProtocol {
 		// System.out.println("symmetric key with card = " + new
 		// BigInteger(1,secretKey.getEncoded()).toString(16));
 
-		aesCipher = Cipher.getInstance("DES/ECB/NoPadding");
+		cipher = Cipher.getInstance("DES/ECB/NoPadding");
 
 		// Initialize the cipher for encryption
-		aesCipher.init(Cipher.DECRYPT_MODE, MainLCP.getSecretKey());
+		cipher.init(Cipher.DECRYPT_MODE, secretKey);
 
 		// Decrypt the cleartext
-		byte[] decryptedText = aesCipher.doFinal(theInput);
+		byte[] decryptedText = cipher.doFinal(theInput);
 		return decryptedText;
 	}
 
@@ -207,13 +228,13 @@ public class RegisterProtocol {
 		// SecretKey secretKey = skf.generateSecret(desSpec);
 
 		// Create the cipher
-		aesCipher = Cipher.getInstance("DES/ECB/NoPadding");
+		cipher = Cipher.getInstance("DES/ECB/NoPadding");
 
 		// Initialize the cipher for encryption
-		aesCipher.init(Cipher.ENCRYPT_MODE, MainLCP.getSecretKey());
+		cipher.init(Cipher.ENCRYPT_MODE, secretKey);
 
 		// Encrypt the cleartext
-		byte[] ciphertext = aesCipher.doFinal(theOutput);
+		byte[] ciphertext = cipher.doFinal(theOutput);
 
 		return ciphertext;
 	}

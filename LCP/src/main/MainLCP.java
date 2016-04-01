@@ -33,9 +33,10 @@ public class MainLCP {
 	
 	private static ECPrivateKey privateKeyLCP;
 	private static ECPublicKey publicKeyLCP;
-	private static Certificate cardCert;
-	private static SecretKey secretKey;
-	private static Map<X509Certificate,Boolean> virtualCardCertList = new HashMap<X509Certificate, Boolean>();
+	private static X509Certificate cardCert;
+	private static X509Certificate colruytCert;
+	private static X509Certificate delhaizeCert;
+	private static Map<X509Certificate,Boolean> certList = new HashMap<X509Certificate, Boolean>();
 	
 	public static void main(String[] args) throws Exception {
 		
@@ -43,9 +44,10 @@ public class MainLCP {
 		makeKeysAndCerts();
 //		winkelDataList = makeWinkelData();
 		
-		int registerPort = 4443; // Port where the SSL Server needs to listen for new requests from the client
-		int verificationPort = 4444;
-		
+		int registerPort = 4443; // poort om een virtuele klantenkaart aan te vragen
+		int verificationPort = 4444; //poort om certificaten te verifieren
+		int updateLogPort = 4445; //poort om log up te daten? voor later te kunnen controleren
+		int hervalidatiePort = 4446; // poort om log te controleren
 		
 		new RegisterSocketListenerThread(registerPort).start();
 		new VerificationSocketListenerThread(verificationPort).start();
@@ -74,26 +76,31 @@ public class MainLCP {
 		FileInputStream keyIn = new FileInputStream(keystoreFile);
 		keyStore.load(keyIn, "kiwikiwi".toCharArray());
 		
-		setCardCert(keyStore.getCertificate("cardCert"));
-															
-		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
-
-		KeyAgreement keyAgreementLCP = KeyAgreement.getInstance("ECDH", "BC");
-		ECPublicKey cardPublicKey = (ECPublicKey)  kf.generatePublic(new X509EncodedKeySpec(MainLCP.getCardCert().getPublicKey().getEncoded()));
-		
-		keyAgreementLCP.init(MainLCP.getPrivateKeyLCP());
-		keyAgreementLCP.doPhase(cardPublicKey, true);
-
-		MessageDigest hash = MessageDigest.getInstance("SHA1", "BC");
-		byte[] hashKey = hash.digest(keyAgreementLCP.generateSecret());
-		System.out.println("symmetric key with card = " + new BigInteger(1,((hash.digest(keyAgreementLCP.generateSecret())))).toString(16));
-		
-		SecretKeyFactory skf = SecretKeyFactory.getInstance("DES");
-		DESKeySpec desSpec = new DESKeySpec(hashKey);
-		setSecretKey(skf.generateSecret(desSpec));
+		setCardCert((X509Certificate)keyStore.getCertificate("cardCert"));
+		addCertToList(getCardCert());
 		
 //		System.out.println("symmetric key with card = " + new BigInteger(1,secretKey.getEncoded()).toString(16));
 		
+		bestandsNaam = "DelhaizeCert";
+		fileName = directoryNaam + "/" + bestandsNaam + "";
+		keystoreFile = new File(fileName);
+		System.out.println(keystoreFile.exists());
+		
+		keyIn = new FileInputStream(keystoreFile);
+		keyStore.load(keyIn, "kiwikiwi".toCharArray());
+		setColruytCert((X509Certificate)keyStore.getCertificate("Colruytcert"));
+		
+		addCertToList( getColruytCert());
+		
+		bestandsNaam = "Colruytcert";
+		fileName = directoryNaam + "/" + bestandsNaam + "";
+		keystoreFile = new File(fileName);
+		System.out.println(keystoreFile.exists());
+		
+		keyIn = new FileInputStream(keystoreFile);
+		keyStore.load(keyIn, "kiwikiwi".toCharArray());
+		setDelhaizeCert((X509Certificate) keyStore.getCertificate(bestandsNaam));
+		addCertToList( getDelhaizeCert());
 		
 	}
 
@@ -118,32 +125,41 @@ public class MainLCP {
 	}
 
 
-	public static Certificate getCardCert() {
+	public static X509Certificate getCardCert() {
 		return cardCert;
 	}
 
 
-	public static void setCardCert(Certificate cardCert) {
+	public static void setCardCert(X509Certificate cardCert) {
 		MainLCP.cardCert = cardCert;
 	}
 
+	public static Map<X509Certificate, Boolean> getCertList() {
+		return certList;
+	}
 
-	public static SecretKey getSecretKey() {
-		return secretKey;
+	public static void addCertToList(X509Certificate virtualCardCert) {
+		MainLCP.certList.put(virtualCardCert, true);
 	}
 
 
-	public static void setSecretKey(SecretKey secretKey) {
-		MainLCP.secretKey = secretKey;
+	public static X509Certificate getColruytCert() {
+		return colruytCert;
 	}
 
 
-	public static Map<X509Certificate, Boolean> getVirtualCardCertList() {
-		return virtualCardCertList;
+	public static void setColruytCert(X509Certificate colruytCert) {
+		MainLCP.colruytCert = colruytCert;
 	}
 
-	public static void addNewVirtualCardCertList(X509Certificate virtualCardCert) {
-		MainLCP.virtualCardCertList.put(virtualCardCert, true);
+
+	public static X509Certificate getDelhaizeCert() {
+		return delhaizeCert;
+	}
+
+
+	public static void setDelhaizeCert(X509Certificate delhaizeCert) {
+		MainLCP.delhaizeCert = delhaizeCert;
 	}
 }
 		

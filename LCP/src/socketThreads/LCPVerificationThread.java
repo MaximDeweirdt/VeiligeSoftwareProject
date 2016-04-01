@@ -7,7 +7,7 @@ import java.net.Socket;
 
 import javax.net.ssl.SSLSocket;
 
-import protocols.LCPProtocol;
+import protocols.VerificationProtocol;
 
 
 public class LCPVerificationThread extends Thread {
@@ -18,7 +18,7 @@ public class LCPVerificationThread extends Thread {
 	private ObjectInputStream in;
 	private ObjectOutputStream out;
 	
-	private LCPProtocol lcpp;
+	private VerificationProtocol vp;
 	
 	public LCPVerificationThread(Socket socket){
 		super("LCPVerificationThread");
@@ -36,19 +36,17 @@ public class LCPVerificationThread extends Thread {
 			
 			this.out = out;
 			this.in = in;
-			lcpp = new LCPProtocol();
+			vp = new VerificationProtocol();
 			Object input;
 			Object output;
 			try{
-				while((input = in.readObject()) != null){
-					output = lcpp.processInput(input);
+				while ((input = in.readObject()) != null) {
+					output = vp.processInput(input);
+					if(output.equals("close connection"))break;
 					out.writeObject(output);
 					out.reset();
-					if(output.toString().equals("Bye")){
-						break;
-					}
 				}
-			}catch(ClassNotFoundException e){
+			}catch(Exception e){
 				e.printStackTrace();
 			}
 			socket.close();

@@ -26,7 +26,7 @@ import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 
 import main.SecurityData;
-import protocols.LCPProtocol;
+import protocols.VerificationProtocol;
 import socketThreads.LCPVerificationThread;
 import socketThreads.RegisterThread;
 
