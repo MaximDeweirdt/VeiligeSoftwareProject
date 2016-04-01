@@ -161,6 +161,7 @@ public class MiddelwareGui extends JFrame {
 						} else {
 							state = ENTER_STORE;
 							entered = true;
+							
 						}
 					}
 				} else {
