@@ -1,17 +1,37 @@
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.KeyFactory;
+import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.Security;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
+
+import org.bouncycastle.jce.interfaces.ECPrivateKey;
+import org.bouncycastle.jce.interfaces.ECPublicKey;
 
 public class WinkelMain {
 
+	private static ECPrivateKey privateKeyWinkel;
+	private static ECPublicKey publicKeyWinkel;
+	private static ECPublicKey publicKeyLCP;
+	private static X509Certificate winkelCert;
 	private static Winkel winkel;
 	private static final char [] KEYSTOREPASWOORD = "kiwikiwi".toCharArray();
+	
+	
 	
 	private static final Scanner SCANNER = new Scanner(System.in);
 	
@@ -22,15 +42,9 @@ public class WinkelMain {
 	
 	/**
 	 * @param args
-	 * @throws NoSuchAlgorithmException
-	 * @throws CertificateException
-	 * @throws FileNotFoundException
-	 * @throws IOException
-	 * @throws KeyStoreException
-	 * @throws ClassNotFoundException 
+	 * @throws Exception 
 	 */
-	public static void main(String[] args) throws NoSuchAlgorithmException, CertificateException, FileNotFoundException,
-			IOException, KeyStoreException, ClassNotFoundException {
+	public static void main(String[] args) throws Exception {
 
 
 		System.out.println("Geef het nummer van de winkel.");
@@ -41,7 +55,7 @@ public class WinkelMain {
 		// (nummer tussen 1-4).
 		int winkelnummer = Integer.parseInt(SCANNER.nextLine());
 		
-		while (winkelnummer <= 0 || winkelnummer > 4) {
+		while (winkelnummer < 0 || winkelnummer > 3) {
 			System.err.println("Het ingegeven winkelnummer is niet correct");
 			winkelnummer = Integer.parseInt(SCANNER.nextLine());
 		}
@@ -50,16 +64,16 @@ public class WinkelMain {
 		// Default wordt Alienware gemaakt.
 		
 		switch (winkelnummer) {
-		case 1:
+		case 0:
 			winkel = new Winkel(ALIENWARE_NAME);
 			break;
-		case 2:
+		case 1:
 			winkel = new Winkel(COLRUYT_NAME);
 			break;
-		case 3:
+		case 2:
 			winkel = new Winkel(DELHAIZE_NAME);
 			break;
-		case 4:
+		case 3:
 			winkel = new Winkel(RAZOR_NAME);
 			break;
 		default:
@@ -68,25 +82,96 @@ public class WinkelMain {
 			winkel = new Winkel(ALIENWARE_NAME);
 			break;
 		}
-		
+		makeKeysAndCerts(winkelnummer);
 		winkel.startGUI();
 		
+		int portNumber = 5000+winkelnummer;
 		
-		String hostname = "localhost";
-		int portNumber = 4443;
+		ServerSocket ss = new ServerSocket(portNumber);
+		System.out.println("RegisterSocket Ready");
+		while (true) {
+			try {
+				new WinkelThread(ss.accept()).start();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+		}
+	}
+	
+	private static void makeKeysAndCerts(int winkelNummer) throws Exception {
 		
-		Socket socket = new Socket(hostname, portNumber);
+		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 		
-		ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+		KeyFactory kf = KeyFactory.getInstance("EC", "BC"); 
 		
-		ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+		// get public key and private key
+		setPublicKeyWinkel((ECPublicKey) kf.generatePublic(new X509EncodedKeySpec(SecurityData.getPublicKey(winkelNummer))));
 		
-		System.out.println("CMOOOOOOOOOON");
-		out.writeObject("fucke youuuu, Kratos");
-		Object ob = in.readObject();
-		System.out.println(ob.toString());
-		out.writeObject("stop");
-		socket.close();
+		setPrivateKeyWinkel((ECPrivateKey) kf.generatePrivate(new PKCS8EncodedKeySpec(SecurityData.getPrivateKey(winkelNummer))));
+		
+		setPublicKeyLCP((ECPublicKey) kf.generatePublic(new X509EncodedKeySpec(SecurityData.getPublickeylcp())));
+	
+		KeyStore keyStore = KeyStore.getInstance("JKS");
+		String directoryNaam =  "keystore";
+		String bestandsNaam;
+		String fileName;
+		File keystoreFile;
+		FileInputStream keyIn;
+		switch(winkelNummer){
+		case 0: 
+			bestandsNaam = "DelhaizeCert";
+			fileName = directoryNaam + "/" + bestandsNaam + "";
+			keystoreFile = new File(fileName);
+			System.out.println(keystoreFile.exists());
+			
+			keyIn = new FileInputStream(keystoreFile);
+			keyStore.load(keyIn, "kiwikiwi".toCharArray());
+			setWinkelCert((X509Certificate)keyStore.getCertificate("Colruytcert"));
+			break;
+		case 1:
+			bestandsNaam = "Colruytcert";
+			fileName = directoryNaam + "/" + bestandsNaam + "";
+			keystoreFile = new File(fileName);
+			System.out.println(keystoreFile.exists());
+			
+			keyIn = new FileInputStream(keystoreFile);
+			keyStore.load(keyIn, "kiwikiwi".toCharArray());
+			setWinkelCert((X509Certificate)keyStore.getCertificate("Colruytcert"));
+		}	
+		
+	}
+
+	public static ECPrivateKey getPrivateKeyWinkel() {
+		return privateKeyWinkel;
+	}
+
+	public static void setPrivateKeyWinkel(ECPrivateKey privateKeyWinkel) {
+		WinkelMain.privateKeyWinkel = privateKeyWinkel;
+	}
+
+	public static ECPublicKey getPublicKeyWinkel() {
+		return publicKeyWinkel;
+	}
+
+	public static void setPublicKeyWinkel(ECPublicKey publicKeyWinkel) {
+		WinkelMain.publicKeyWinkel = publicKeyWinkel;
+	}
+
+	public static ECPublicKey getPublicKeyLCP() {
+		return publicKeyLCP;
+	}
+
+	public static void setPublicKeyLCP(ECPublicKey publicKeyLCP) {
+		WinkelMain.publicKeyLCP = publicKeyLCP;
+	}
+
+	public static X509Certificate getWinkelCert() {
+		return winkelCert;
+	}
+
+	public static void setWinkelCert(X509Certificate winkelCert) {
+		WinkelMain.winkelCert = winkelCert;
 	}
 
 }

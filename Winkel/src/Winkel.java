@@ -36,37 +36,4 @@ public class Winkel {
 		WinkelGUI gui = new WinkelGUI(this);
 		gui.setVisible(true);
 	}
-
-	private void setUpKeyAgreement() throws NoSuchAlgorithmException, NoSuchProviderException,
-			InvalidAlgorithmParameterException, InvalidKeyException {
-		KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDH", "BC");
-		SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
-		EllipticCurve curve = new EllipticCurve(
-				new ECFieldFp(new BigInteger("fffffffffffffffffffffffffffffffeffffffffffffffff", 16)),
-				new BigInteger("fffffffffffffffffffffffffffffffeffffffffffffffff", 16),
-				new BigInteger("fffffffffffffffffffffffffffffffeffffffffffffffff", 16));
-
-		ECParameterSpec ecSpec = new ECParameterSpec(curve,
-				new ECPoint(new BigInteger("fffffffffffffffffffffffffffffffefffffffffffffffc", 16),
-						new BigInteger("fffffffffffffffffffffffffffffffefffffffffffffffc", 16)),
-				new BigInteger("fffffffffffffffffffffffffffffffefffffffffffffffc", 16), 1);
-
-		keyGen.initialize(ecSpec, random);
-		KeyAgreement aKeyAgree = KeyAgreement.getInstance("ECDH", "BC");
-		KeyPair aPair = keyGen.generateKeyPair();
-		KeyAgreement bKeyAgree = KeyAgreement.getInstance("ECDH", "BC");
-		KeyPair bPair = keyGen.generateKeyPair();
-
-		aKeyAgree.init(aPair.getPrivate());
-		bKeyAgree.init(bPair.getPrivate());
-
-		aKeyAgree.doPhase(bPair.getPublic(), true);
-		bKeyAgree.doPhase(aPair.getPublic(), true);
-
-		MessageDigest hash = MessageDigest.getInstance("SHA1", "BC");
-
-		System.out.println(new String(hash.digest(aKeyAgree.generateSecret())));
-		System.out.println(new String(hash.digest(bKeyAgree.generateSecret())));
-	}
-
 }

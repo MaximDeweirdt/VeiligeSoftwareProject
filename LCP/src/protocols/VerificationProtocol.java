@@ -2,11 +2,8 @@ package protocols;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.Security;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -74,6 +71,7 @@ public class VerificationProtocol {
 			}
 		}else if (state == VERIFYCERTSTATE) {
 			byte[] input = (byte[]) theInput;
+			
 			boolean valid = true;
 			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
 			InputStream in = new ByteArrayInputStream(input);

@@ -1,49 +1,38 @@
-package protocols;
-
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.math.BigInteger;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
 import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.Security;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Date;
+import java.util.Scanner;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.DESKeySpec;
-import javax.security.auth.x500.X500Principal;
 
-import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.X509v1CertificateBuilder;
-import org.bouncycastle.cert.jcajce.JcaX509v1CertificateBuilder;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
-import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
-import main.MainLCP;
-import socketListeners.RegisterSocketListenerThread;
-import socketThreads.RegisterThread;
-
-public class RegisterProtocol {
-
+public class WinkelProtocol {
 	private Cipher cipher;
-	private RegisterThread rt;
+	private WinkelThread wt;
 	private SecretKey secretKey;
-	
+	Scanner sc = new Scanner(System.in);
 	public static final int TESTCONNECTIONSTATE = -1;
 
 	public static final int CHECKCERTIFICATESTATE = 0;
-	public static final int KIESWINKELSTATE = 1;
+	public static final int CHANGEPOINTSSTATE = 1;
 
 	int state = CHECKCERTIFICATESTATE;
 
-	public RegisterProtocol(RegisterThread rt) {
-		this.rt = rt;
+	public WinkelProtocol(WinkelThread wt) {
+		this.wt = wt;
 	}
 
 	public Object processInput(Object theInput) throws Exception {
@@ -60,69 +49,85 @@ public class RegisterProtocol {
 			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
 			InputStream in = new ByteArrayInputStream(input);
 			X509Certificate cardCert = (X509Certificate) certFactory.generateCertificate(in);
-
-			try {
+			
+			try{
 				cardCert.checkValidity();
-				cardCert.verify(MainLCP.getPublicKeyLCP());
-				System.out.println("signature is correct");
-				makeSecretKey(cardCert);
-				byte[] accepted = { 'a', 'c', 'c', 'e', 'p', 't', 'e', 'd' };
-				theOutput = encryptOutput(accepted);
-				state = KIESWINKELSTATE;
-			} catch (Exception e) {
-				System.err.println("signature isn't correct");
+				cardCert.verify(WinkelMain.getPublicKeyLCP());
+			}catch(Exception e){
+				System.err.println("signature doesn't match");
 				byte[] denied = { 'd', 'e', 'n', 'i', 'e', 'd', 'e', 'd' };
 				theOutput = encryptOutput(denied);
-				state = CHECKCERTIFICATESTATE;
+				return theOutput;
 			}
-			
-
-		} else if (state == KIESWINKELSTATE) {
-			byte[] input = (byte[]) theInput;
-			X509Certificate shopPseudoCert;
+			//checken of kaart certificaat legit is
+			Socket verifyCertSocket = new Socket("localhost", 4444);
+			ObjectOutputStream verifyOut = new ObjectOutputStream(verifyCertSocket.getOutputStream());
+			ObjectInputStream verifyIn = new ObjectInputStream(verifyCertSocket.getInputStream());
+			//eerst keyAgreement
+			verifyOut.writeObject(WinkelMain.getWinkelCert().getEncoded());
+			makeSecretKeyWithLCP();
+			input = (byte[]) verifyIn.readObject();
 			byte[] decryptedInput = decryptInput(input);
-			short winkelNummer = byteArrayToShort(decryptedInput);
 			
-			switch (winkelNummer) {
-			case 0:
-				System.out.println("winkel 0 gekozen");
-				shopPseudoCert = makePseudonimCert("winkel0");
-				MainLCP.addCertToList(shopPseudoCert);
-				theOutput = encryptOutput(shopPseudoCert.getEncoded());
-				break;
-			case 1:
-				System.out.println("winkel 1 gekozen");
-				shopPseudoCert = makePseudonimCert("winkel1");
-				MainLCP.addCertToList(shopPseudoCert);
-				theOutput = encryptOutput(shopPseudoCert.getEncoded());
-				break;
-			case 2:
-				System.out.println("winkel 2 gekozen");
-				shopPseudoCert = makePseudonimCert("winkel2");
-				MainLCP.addCertToList(shopPseudoCert);
-				theOutput = encryptOutput(shopPseudoCert.getEncoded());
-				break;
-			case 3:
-				System.out.println("winkel 3 gekozen");
-				shopPseudoCert = makePseudonimCert("winkel3");
-				MainLCP.addCertToList(shopPseudoCert);
-				theOutput = encryptOutput(shopPseudoCert.getEncoded());
-				break;
+			if(decryptedInput[0] == 'd'){
+				System.err.println("winkelCertificaat niet aanvaard");
 			}
-			rt.finishedCom = true;
+			else if(decryptedInput[0] == 'a'){
+				
+				verifyOut.writeObject(cardCert.getEncoded());
+				
+				input = (byte[]) verifyIn.readObject();
+				decryptedInput = decryptInput(input);
+
+				if(decryptedInput[0] == 'd'){
+					byte[] denied = { 'd', 'e', 'n', 'i', 'e', 'd', 'e', 'd' };
+					theOutput = encryptOutput(denied);
+				}
+				else{
+					//legit => winkelCertificaat terugsturen
+					makeSecretKeyWithCard(cardCert);
+					theOutput = encryptOutput(WinkelMain.getWinkelCert().getEncoded());
+					state = CHANGEPOINTSSTATE;
+				}
+			}
+			verifyOut.writeObject("close connection");
+			verifyCertSocket.close();
+			
+		} else if (state == CHANGEPOINTSSTATE) {
+			byte[] input = (byte[]) theInput;
+			byte[] decryptedInput = decryptInput(input);
+			short nPoints = byteArrayToShort(decryptedInput);
+			System.out.println("je hebt " + nPoints + ", geef het aantal punten toe te voegen of af te trekken: ");
+			
+			short addjustPoints = (short) sc.nextInt();
+			
+			byte[] byteAddjust = shortToByte(addjustPoints);
+			
+			theOutput = encryptOutput(byteAddjust);
 		}
 
 		return theOutput;
 	}
 	
-	private void makeSecretKey(X509Certificate cert) throws Exception{
+	private byte[] trimArray(byte[] decryptedInput) {
+		int i = 0;
+		while(decryptedInput[i] == 0){
+			i++;
+		}
+		byte[]trimmedInput = new byte[decryptedInput.length-i];
+		
+		System.arraycopy(decryptedInput, i, trimmedInput, 0, trimmedInput.length);
+		return trimmedInput;
+	}
+
+	private void makeSecretKeyWithCard(X509Certificate cert) throws Exception{
 		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 		
 		KeyFactory kf = KeyFactory.getInstance("EC", "BC"); 
 		KeyAgreement keyAgreementLCP = KeyAgreement.getInstance("ECDH", "BC");
 		ECPublicKey certPublicKey = (ECPublicKey)  kf.generatePublic(new X509EncodedKeySpec(cert.getPublicKey().getEncoded()));
 		
-		keyAgreementLCP.init(MainLCP.getPrivateKeyLCP());
+		keyAgreementLCP.init(WinkelMain.getPrivateKeyWinkel());
 		keyAgreementLCP.doPhase(certPublicKey, true);
 
 		MessageDigest hash = MessageDigest.getInstance("SHA1", "BC");
@@ -135,33 +140,25 @@ public class RegisterProtocol {
 		
 	}
 	
+	private void makeSecretKeyWithLCP() throws Exception{
 
-	private X509Certificate makePseudonimCert(String shopName) throws Exception {
-		Date startDate = new Date();
+		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 		
-		@SuppressWarnings("deprecation")
-		Date expiryDate = new Date(2016, 12, 31, 23, 59, 59);
-		Long uniqueCardID = RegisterSocketListenerThread.getCardShopID().getAndIncrement();
+		KeyFactory kf = KeyFactory.getInstance("EC", "BC"); 
+		KeyAgreement keyAgreementLCP = KeyAgreement.getInstance("ECDH", "BC");
+		ECPublicKey lcpPublicKey = (ECPublicKey)  kf.generatePublic(new X509EncodedKeySpec(WinkelMain.getPublicKeyLCP().getEncoded()));
+		
+		keyAgreementLCP.init(WinkelMain.getPrivateKeyWinkel());
+		keyAgreementLCP.doPhase(lcpPublicKey, true);
 
-		BigInteger serialNumber = new BigInteger("" + 10 + uniqueCardID); // serial
-																			// number
-																			// for
-		// certificate
-
-		// keypair is the EC public/private key pair
-		X500Principal dnName = new X500Principal("CN= " + shopName);
-		ContentSigner signer = new JcaContentSignerBuilder("SHA1withECDSA").build(MainLCP.getPrivateKeyLCP());
-
-		X509v1CertificateBuilder v1CertGen = new JcaX509v1CertificateBuilder(dnName, serialNumber, startDate,
-				expiryDate, dnName, MainLCP.getCardCert().getPublicKey());
-		X509CertificateHolder holder = v1CertGen.build(signer);
-		CertificateFactory cf = CertificateFactory.getInstance("X.509");
-		InputStream certIs = new ByteArrayInputStream(holder.getEncoded());
-		X509Certificate cert = (X509Certificate) cf.generateCertificate(certIs);
-
-		System.out.println(cert);
-		return cert;
-
+		MessageDigest hash = MessageDigest.getInstance("SHA1", "BC");
+		byte[] hashKey = hash.digest(keyAgreementLCP.generateSecret());
+//		System.out.println("symmetric key with cert = " + new BigInteger(1,((hash.digest(keyAgreementLCP.generateSecret())))).toString(16));
+		
+		SecretKeyFactory skf = SecretKeyFactory.getInstance("DES");
+		DESKeySpec desSpec = new DESKeySpec(hashKey);
+		secretKey = skf.generateSecret(desSpec);
+		
 	}
 
 	private byte[] decryptInput(byte[] theInput) throws Exception {
@@ -234,8 +231,19 @@ public class RegisterProtocol {
 		return ciphertext;
 	}
 
+	private static short byteToShort(byte b) {
+		return (short) (b & 0xff);
+	}
+
 	private static short byteArrayToShort(byte[] b) {
 		short value = (short) (((b[0] << 8)) | ((b[1] & 0xff)));
 		return value;
+	}
+
+	private static byte[] shortToByte(short s) {
+		byte[] shortByte = new byte[2];
+		shortByte[0] = (byte) ((s >> 8) & 0xff);
+		shortByte[1] = (byte) (s & 0xff);
+		return shortByte;
 	}
 }

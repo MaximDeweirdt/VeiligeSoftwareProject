@@ -2,25 +2,14 @@ package main;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.KeyStore;
-import java.security.MessageDigest;
 import java.security.Security;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.List;
 import java.util.Map;
 
-import javax.crypto.KeyAgreement;
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.DESKeySpec;
-
-import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
@@ -46,8 +35,8 @@ public class MainLCP {
 		
 		int registerPort = 4443; // poort om een virtuele klantenkaart aan te vragen
 		int verificationPort = 4444; //poort om certificaten te verifieren
-		int updateLogPort = 4445; //poort om log up te daten? voor later te kunnen controleren
-		int hervalidatiePort = 4446; // poort om log te controleren
+//		int updateLogPort = 4445; //poort om log up te daten? voor later te kunnen controleren
+//		int hervalidatiePort = 4446; // poort om log te controleren
 		
 		new RegisterSocketListenerThread(registerPort).start();
 		new VerificationSocketListenerThread(verificationPort).start();
@@ -81,7 +70,7 @@ public class MainLCP {
 		
 //		System.out.println("symmetric key with card = " + new BigInteger(1,secretKey.getEncoded()).toString(16));
 		
-		bestandsNaam = "DelhaizeCert";
+		bestandsNaam = "Colruytcert";
 		fileName = directoryNaam + "/" + bestandsNaam + "";
 		keystoreFile = new File(fileName);
 		System.out.println(keystoreFile.exists());
@@ -92,7 +81,7 @@ public class MainLCP {
 		
 		addCertToList( getColruytCert());
 		
-		bestandsNaam = "Colruytcert";
+		bestandsNaam = "DelhaizeCert";
 		fileName = directoryNaam + "/" + bestandsNaam + "";
 		keystoreFile = new File(fileName);
 		System.out.println(keystoreFile.exists());

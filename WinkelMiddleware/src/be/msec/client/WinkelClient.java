@@ -149,8 +149,10 @@ public class WinkelClient {
 			
 			byte[] pseudoniemKaart = new byte[5];//give it to me card (niet geencrypteerd)
 			
-			winkelOut.writeObject(pseudoniemKaart);
-			input = (byte[])winkelIn.readObject();//het ganse X509 certificaat dat doorgestuurd wordt naar de LCP voor controle
+			winkelOut.writeObject(pseudoniemKaart);//winkel checkt pseudoniem en geeft zijnn eigen cert 
+			
+			
+			input = (byte[])winkelIn.readObject();//het ganse X509 certificaat dat doorgestuurd wordt naar de LCP voor controle of denied terug
 			
 			verifyOut.writeObject(input);
 			input = (byte[]) verifyIn.readObject();// hier dan mss best da eenvoudig certificaat returnen, ofwel accepted of denied
@@ -162,10 +164,10 @@ public class WinkelClient {
 			 * de kaart aan de lengte ervan zien of het just is of niet zeker
 			 * 
 			 * dus deze input is da eenvoudig certificaat voorlopig
+			 * bestaande uit: {qparameter,username,seriallength}
 			*/
 			
 			//nu beschikken ze alletwee over elkaars public key en zullen ze dus ne symmetric key kunnen vormen elk
-			
 			input = shortToByte((short)5);
 			while(byteArrayToShort(input)!=(short)0){
 				
