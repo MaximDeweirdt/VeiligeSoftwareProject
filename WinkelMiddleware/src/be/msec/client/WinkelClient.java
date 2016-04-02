@@ -95,7 +95,7 @@ public class WinkelClient {
 		c.connect(); 
 		
 		String hostname = "localhost";
-		int verifyCertPortNumber = 4443;
+		int verifyCertPortNumber = 4444;
 		
 		int winkelStartPortNumber = 5000;
 		int winkelPortNumber;
@@ -154,15 +154,8 @@ public class WinkelClient {
 			//certificaat van de winkel vragen om te controleren of de winkel betrouwbaar is
 			//terwijl ook eigen psuedoniem certificaat naar de winkel sturen zodat deze kan controleren of die nog geldig is
 			
-			//eerst moeten we de id van de winkel setten waarmee we bezig zijn in de kaart
-			setShopIdAndPseudoniem(a,r,c,shortToByte((short)winkelnummer));
-			
-			byte[] pseudoniemKaart = requestPseudoniem(a,r,c);//give it to me card (niet geencrypteerd)
-			
-			winkelOut.writeObject(pseudoniemKaart);//winkel checkt pseudoniem en geeft zijnn eigen cert 
-			
-			
-			input = (byte[])winkelIn.readObject();//het ganse X509 certificaat dat doorgestuurd wordt naar de LCP voor controle of denied terug
+			winkelOut.writeObject("gimmeCert");
+			input = (byte[])winkelIn.readObject();//het ganse X509 certificaat dat doorgestuurd wordt naar de LCP voor controle
 			
 			verifyOut.writeObject(input);
 			input = (byte[]) verifyIn.readObject();// hier dan mss best da eenvoudig certificaat returnen, ofwel accepted of denied
@@ -174,8 +167,21 @@ public class WinkelClient {
 			 * de kaart aan de lengte ervan zien of het just is of niet zeker
 			 * 
 			 * dus deze input is da eenvoudig certificaat voorlopig
-			 * bestaande uit: {qparameter,username,seriallength}
+			 * bestaande uit: {qparameter,shopNumber,seriallength}
 			*/
+			
+			//
+			//eerst moeten we de id van de winkel setten waarmee we bezig zijn in de kaart
+			setShopIdAndPseudoniem(a,r,c,shortToByte((short)winkelnummer));
+			
+			byte[] pseudoniemKaart = requestPseudoniem(a,r,c);//give it to me card (niet geencrypteerd)
+			
+			winkelOut.writeObject(pseudoniemKaart);//winkel checkt pseudoniem en geeft zijnn eigen cert 
+			
+			
+			input = (byte[])winkelIn.readObject();//accepted of denied naargelang het cert van kaart
+			
+			
 			
 			//nu beschikken ze alletwee over elkaars public key en zullen ze dus ne symmetric key kunnen vormen elk
 			input = shortToByte((short)5);

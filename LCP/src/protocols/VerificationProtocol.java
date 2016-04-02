@@ -109,14 +109,22 @@ public class VerificationProtocol {
 		ECPublicKey certPublicKey = (ECPublicKey)  kf.generatePublic(new X509EncodedKeySpec(cert.getPublicKey().getEncoded()));
 		
 		byte[] qParameter = certPublicKey.getQ().getEncoded();
-		byte[] username = cert.getIssuerX500Principal().getEncoded();
+		short shopNR = -1;
+		if(cert.getIssuerX500Principal().getName().contains("Colruyt")){
+			shopNR = 0;
+		}
+		else if(cert.getIssuerX500Principal().getName().contains("Delhaize")){
+			shopNR = 1;
+		}
+		
+		byte[] shopNumber = shortToByte(shopNR);
 		byte[] serialNumber = cert.getSerialNumber().toByteArray();
 		
 //		int aLen = a.length;
 //		int bLen = b.length;
-		byte[] concat = new byte[qParameter.length + username.length];
+		byte[] concat = new byte[qParameter.length + shopNumber.length];
 		System.arraycopy(qParameter, 0, concat, 0, qParameter.length);
-		System.arraycopy(username, 0, concat, qParameter.length, username.length);
+		System.arraycopy(shopNumber, 0, concat, qParameter.length, shopNumber.length);
 		
 		byte[] simpleCert = new byte[concat.length + serialNumber.length];
 		System.arraycopy(concat, 0, concat, 0, concat.length);
@@ -186,5 +194,12 @@ public class VerificationProtocol {
 		byte[] ciphertext = cipher.doFinal(theOutput);
 
 		return ciphertext;
+	}
+	
+	public static byte[] shortToByte(short s) {
+		byte[] shortByte = new byte[2];
+		shortByte[0] = (byte) ((s >> 8) & 0xff);
+		shortByte[1] = (byte) (s & 0xff);
+		return shortByte;
 	}
 }
