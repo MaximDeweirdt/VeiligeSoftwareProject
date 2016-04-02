@@ -59,6 +59,7 @@ public class WinkelClient {
 	
 	
 	private static final byte REQ_PSEUDONIEM_INS = 0x40;
+	private static final byte CERT_SHOP_INFO_INS = 0x41;
 	
 	
 	
@@ -156,9 +157,11 @@ public class WinkelClient {
 			
 			winkelOut.writeObject("gimmeCert");
 			input = (byte[])winkelIn.readObject();//het ganse X509 certificaat dat doorgestuurd wordt naar de LCP voor controle
-			
+
 			verifyOut.writeObject(input);
-			input = (byte[]) verifyIn.readObject();// hier dan mss best da eenvoudig certificaat returnen, ofwel accepted of denied
+			input = (byte[]) verifyIn.readObject();
+			System.out.println("input =" + new BigInteger(1,input));
+			// hier dan mss best da eenvoudig certificaat returnen, ofwel accepted of denied
 			/* als we me accepted en denied werken, moeten we daarna weer aan de winkel het eenvoudig certificaat vragen,
 			 * met die public key parameter. probleem daarmee is da de winkel het correcte certificaat kan sturen eerst en
 			 * daarna ne foute parameter voor die key en dan ist nie veilig
@@ -169,7 +172,7 @@ public class WinkelClient {
 			 * dus deze input is da eenvoudig certificaat voorlopig
 			 * bestaande uit: {qparameter,shopNumber,seriallength}
 			*/
-			
+			setCertInfoShop(a,r,c,input);
 			//
 			//eerst moeten we de id van de winkel setten waarmee we bezig zijn in de kaart
 			setShopIdAndPseudoniem(a,r,c,shortToByte((short)winkelnummer));
@@ -210,6 +213,12 @@ public class WinkelClient {
 
 	}
 	
+	private static void setCertInfoShop(CommandAPDU a, ResponseAPDU r, IConnection c, byte[] input) throws Exception {
+		a = new CommandAPDU(IDENTITY_CARD_CLA, CERT_SHOP_INFO_INS, (byte) (input.length&0xff), 0x00,input);
+		r = c.transmit(a);
+		System.out.println("cert winkel : " + r);
+	}
+
 	private static void setShopIdAndPseudoniem(CommandAPDU a, ResponseAPDU r, IConnection c, byte[] shopId) throws Exception {
 		//versturen van winkelkeuze naar de kaart
 		a = new CommandAPDU(IDENTITY_CARD_CLA, SET_ID_SHOP_INS, (byte) (shopId.length&0xff), 0x00,shopId);

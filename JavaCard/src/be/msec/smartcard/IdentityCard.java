@@ -41,6 +41,7 @@ public class IdentityCard extends Applet {
 	
 	
 	private static final byte REQ_PSEUDONIEM_INS = 0x40;
+	private static final byte CERT_SHOP_INFO_INS = 0x41;
 	
 	private final static byte PIN_TRY_LIMIT = (byte) 0x03;
 	private final static byte PIN_SIZE = (byte) 0x04;
@@ -163,6 +164,9 @@ public class IdentityCard extends Applet {
 		case REQ_PSEUDONIEM_INS:
 			sendPseudoniem(apdu);
 			break;
+		case CERT_SHOP_INFO_INS:
+			safeCertInfoShop(apdu);
+			break;
 		// If no matching instructions are found it is indicated in the status
 		// word of the response.
 		// This can be done by using this method. As an argument a short is
@@ -172,6 +176,28 @@ public class IdentityCard extends Applet {
 		default:
 			ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
 		}
+	}
+
+	private void safeCertInfoShop(APDU apdu) {
+		byte[] buffer = apdu.getBuffer();
+		short dataLength = apdu.setIncomingAndReceive();
+		
+		short length = byteToShort(buffer[ISO7816.OFFSET_P1]);
+		byte[] certShop = new byte[length];
+		Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, certShop, (short) 0, length);
+		
+		byte[] QparamShop = new byte[49];
+		Util.arrayCopy(certShop, (short) 0, QparamShop, (short) 0, (short)49);
+		
+		byte[] shopNumber = new byte[2];
+		Util.arrayCopy(certShop, (short) 49, shopNumber, (short) 0, (short)2);
+		
+		byte[] serialLength = new byte[2];
+		Util.arrayCopy(certShop, (short) 51, shopNumber, (short) 0, (short)2);
+		
+		apdu.setOutgoing();
+		apdu.setOutgoingLength((short) certShop.length);
+		apdu.sendBytesLong(certShop, (short) 0, (short) certShop.length);
 	}
 
 	private void sendPseudoniem(APDU apdu) {
