@@ -48,7 +48,7 @@ public class WinkelMain {
 
 
 		System.out.println("Geef het nummer van de winkel.");
-		System.out.println("Alienware\t1\nColruyt    \t2\nDelhaize\t3\nRazor      \t4");
+		System.out.println("Colruyt    \t0\nDelhaize\t1\nAlienware\t2\nRazor      \t3");
 
 		// Inlezen van het winkelnummer
 		// Dit blijft gebeuren dat het winkelnummer een aanvaardbaar nummer is
@@ -65,13 +65,12 @@ public class WinkelMain {
 		
 		switch (winkelnummer) {
 		case 0:
-			winkel = new Winkel(ALIENWARE_NAME);
-			break;
-		case 1:
 			winkel = new Winkel(COLRUYT_NAME);
 			break;
-		case 2:
+		case 1:
 			winkel = new Winkel(DELHAIZE_NAME);
+		case 2:
+			winkel = new Winkel(ALIENWARE_NAME);
 			break;
 		case 3:
 			winkel = new Winkel(RAZOR_NAME);
@@ -120,7 +119,7 @@ public class WinkelMain {
 		FileInputStream keyIn;
 		switch(winkelNummer){
 		case 0: 
-			bestandsNaam = "DelhaizeCert";
+			bestandsNaam = "Colruytcert";
 			fileName = directoryNaam + "/" + bestandsNaam + "";
 			keystoreFile = new File(fileName);
 			System.out.println(keystoreFile.exists());
@@ -130,14 +129,14 @@ public class WinkelMain {
 			setWinkelCert((X509Certificate)keyStore.getCertificate("Colruytcert"));
 			break;
 		case 1:
-			bestandsNaam = "Colruytcert";
+			bestandsNaam = "DelhaizeCert";
 			fileName = directoryNaam + "/" + bestandsNaam + "";
 			keystoreFile = new File(fileName);
 			System.out.println(keystoreFile.exists());
 			
 			keyIn = new FileInputStream(keystoreFile);
 			keyStore.load(keyIn, "kiwikiwi".toCharArray());
-			setWinkelCert((X509Certificate)keyStore.getCertificate("Colruytcert"));
+			setWinkelCert((X509Certificate)keyStore.getCertificate("DelhaizeCert"));
 		}	
 		
 	}
