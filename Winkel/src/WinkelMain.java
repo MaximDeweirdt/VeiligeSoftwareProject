@@ -120,7 +120,7 @@ public class WinkelMain {
 		FileInputStream keyIn;
 		switch(winkelNummer){
 		case 0: 
-			bestandsNaam = "DelhaizeCert";
+			bestandsNaam = "Colruytcert";
 			fileName = directoryNaam + "/" + bestandsNaam + "";
 			keystoreFile = new File(fileName);
 			System.out.println(keystoreFile.exists());
@@ -130,14 +130,14 @@ public class WinkelMain {
 			setWinkelCert((X509Certificate)keyStore.getCertificate("Colruytcert"));
 			break;
 		case 1:
-			bestandsNaam = "Colruytcert";
+			bestandsNaam = "DelhaizeCert";
 			fileName = directoryNaam + "/" + bestandsNaam + "";
 			keystoreFile = new File(fileName);
 			System.out.println(keystoreFile.exists());
 			
 			keyIn = new FileInputStream(keystoreFile);
 			keyStore.load(keyIn, "kiwikiwi".toCharArray());
-			setWinkelCert((X509Certificate)keyStore.getCertificate("Colruytcert"));
+			setWinkelCert((X509Certificate)keyStore.getCertificate("DelhaizeCert"));
 		}	
 		
 	}
