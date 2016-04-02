@@ -68,6 +68,11 @@ public class IdentityCard extends Applet {
 	private byte[] pseudoniemRazor = new byte[250];
 	short razorPoints;
 	
+	private byte[] QparamColruyt = new byte[52];
+	private byte[] QparamDelhaize = new byte[52];
+	private byte[] QparamAlienWare = new byte[52];
+	private byte[] QparamRazor = new byte[52];
+	
 	public static byte[] privateKeyCard = new byte[] { (byte) 0x30, (byte) 0x7b, (byte) 0x02, (byte) 0x01, (byte) 0x00,
 			(byte) 0x30, (byte) 0x13, (byte) 0x06, (byte) 0x07, (byte) 0x2a, (byte) 0x86, (byte) 0x48, (byte) 0xce,
 			(byte) 0x3d, (byte) 0x02, (byte) 0x01, (byte) 0x06, (byte) 0x08, (byte) 0x2a, (byte) 0x86, (byte) 0x48,
@@ -183,21 +188,40 @@ public class IdentityCard extends Applet {
 		short dataLength = apdu.setIncomingAndReceive();
 		
 		short length = byteToShort(buffer[ISO7816.OFFSET_P1]);
-		byte[] certShop = new byte[length];
-		Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, certShop, (short) 0, length);
+		byte[] certShopEncrypted = new byte[length];
+		Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, certShopEncrypted, (short) 0, length);
 		
-		byte[] QparamShop = new byte[49];
-		Util.arrayCopy(certShop, (short) 0, QparamShop, (short) 0, (short)49);
+		byte[] certShop = decryptDataLCP(certShopEncrypted);
+		
+		byte[] QparamShop = new byte[52];
+		Util.arrayCopy(certShop, (short) 0, QparamShop, (short) 0, (short)52);
 		
 		byte[] shopNumber = new byte[2];
-		Util.arrayCopy(certShop, (short) 49, shopNumber, (short) 0, (short)2);
+		Util.arrayCopy(certShop, (short) 52, shopNumber, (short) 0, (short)2);
 		
-		byte[] serialLength = new byte[2];
-		Util.arrayCopy(certShop, (short) 51, shopNumber, (short) 0, (short)2);
+		byte[] serialNumber = new byte[2];
+		Util.arrayCopy(certShop, (short) 54, serialNumber, (short) 0, (short)2);
 		
+		if(byteArrayToShort(shopNumber)==(short)0){
+			QparamColruyt = QparamShop;
+			idShop = 0;
+		}
+		if(byteArrayToShort(shopNumber)==(short)1){
+			QparamDelhaize = QparamShop;
+			idShop = 1;
+		}
+		if(byteArrayToShort(shopNumber)==(short)2){
+			QparamAlienWare = QparamShop;
+			idShop = 2;
+		}
+		if(byteArrayToShort(shopNumber)==(short)3){
+			QparamRazor = QparamShop;
+			idShop = 3;
+		}
 		apdu.setOutgoing();
-		apdu.setOutgoingLength((short) certShop.length);
-		apdu.sendBytesLong(certShop, (short) 0, (short) certShop.length);
+		apdu.setOutgoingLength((short) serialNumber.length);
+		apdu.sendBytesLong(serialNumber, (short) 0, (short) serialNumber.length);
+
 	}
 
 	private void sendPseudoniem(APDU apdu) {

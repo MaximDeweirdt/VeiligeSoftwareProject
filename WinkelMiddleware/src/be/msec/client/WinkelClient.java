@@ -160,7 +160,7 @@ public class WinkelClient {
 
 			verifyOut.writeObject(input);
 			input = (byte[]) verifyIn.readObject();
-			System.out.println("input =" + new BigInteger(1,input));
+			System.out.println("input =" + new BigInteger(1,input).toString(16));
 			// hier dan mss best da eenvoudig certificaat returnen, ofwel accepted of denied
 			/* als we me accepted en denied werken, moeten we daarna weer aan de winkel het eenvoudig certificaat vragen,
 			 * met die public key parameter. probleem daarmee is da de winkel het correcte certificaat kan sturen eerst en
@@ -170,12 +170,9 @@ public class WinkelClient {
 			 * de kaart aan de lengte ervan zien of het just is of niet zeker
 			 * 
 			 * dus deze input is da eenvoudig certificaat voorlopig
-			 * bestaande uit: {qparameter,shopNumber,seriallength}
+			 * bestaande uit: {qparameter,shopNumber,serialnumber}
 			*/
-			setCertInfoShop(a,r,c,input);
-			//
-			//eerst moeten we de id van de winkel setten waarmee we bezig zijn in de kaart
-			setShopIdAndPseudoniem(a,r,c,shortToByte((short)winkelnummer));
+			setCertInfoShop(a,r,c,input);//hier wordt de Q parameter en het winkel id in de kaart geset
 			
 			byte[] pseudoniemKaart = requestPseudoniem(a,r,c);//give it to me card (niet geencrypteerd)
 			
@@ -217,6 +214,7 @@ public class WinkelClient {
 		a = new CommandAPDU(IDENTITY_CARD_CLA, CERT_SHOP_INFO_INS, (byte) (input.length&0xff), 0x00,input);
 		r = c.transmit(a);
 		System.out.println("cert winkel : " + r);
+		System.out.println("cert = " + new BigInteger(1,r.getData()).toString(16));
 	}
 
 	private static void setShopIdAndPseudoniem(CommandAPDU a, ResponseAPDU r, IConnection c, byte[] shopId) throws Exception {
