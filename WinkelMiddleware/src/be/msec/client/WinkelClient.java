@@ -118,8 +118,8 @@ public class WinkelClient {
 		
 		winkelSocket = new Socket(hostname, winkelPortNumber);
 		
-		winkelOut = new ObjectOutputStream(verifyCertSocket.getOutputStream());
-		winkelIn = new ObjectInputStream(verifyCertSocket.getInputStream());
+		winkelOut = new ObjectOutputStream(winkelSocket.getOutputStream());
+		winkelIn = new ObjectInputStream(winkelSocket.getInputStream());
 		
 		Object ob;
 		
