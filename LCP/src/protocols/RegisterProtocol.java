@@ -86,25 +86,25 @@ public class RegisterProtocol {
 			switch (winkelNummer) {
 			case 0:
 				System.out.println("winkel 0 gekozen");
-				shopPseudoCert = makePseudonimCert("winkel0");
+				shopPseudoCert = makePseudonimCert(0);
 				MainLCP.addCertToList(shopPseudoCert);
 				theOutput = encryptOutput(shopPseudoCert.getEncoded());
 				break;
 			case 1:
 				System.out.println("winkel 1 gekozen");
-				shopPseudoCert = makePseudonimCert("winkel1");
+				shopPseudoCert = makePseudonimCert(1);
 				MainLCP.addCertToList(shopPseudoCert);
 				theOutput = encryptOutput(shopPseudoCert.getEncoded());
 				break;
 			case 2:
 				System.out.println("winkel 2 gekozen");
-				shopPseudoCert = makePseudonimCert("winkel2");
+				shopPseudoCert = makePseudonimCert(2);
 				MainLCP.addCertToList(shopPseudoCert);
 				theOutput = encryptOutput(shopPseudoCert.getEncoded());
 				break;
 			case 3:
 				System.out.println("winkel 3 gekozen");
-				shopPseudoCert = makePseudonimCert("winkel3");
+				shopPseudoCert = makePseudonimCert(3);
 				MainLCP.addCertToList(shopPseudoCert);
 				theOutput = encryptOutput(shopPseudoCert.getEncoded());
 				break;
@@ -136,7 +136,7 @@ public class RegisterProtocol {
 	}
 	
 
-	private X509Certificate makePseudonimCert(String shopName) throws Exception {
+	private X509Certificate makePseudonimCert(int winkelNummer) throws Exception {
 		Date startDate = new Date();
 		
 		@SuppressWarnings("deprecation")
@@ -149,7 +149,7 @@ public class RegisterProtocol {
 		// certificate
 
 		// keypair is the EC public/private key pair
-		X500Principal dnName = new X500Principal("CN= " + shopName);
+		X500Principal dnName = new X500Principal("CN= " + winkelNummer);
 		ContentSigner signer = new JcaContentSignerBuilder("SHA1withECDSA").build(MainLCP.getPrivateKeyLCP());
 
 		X509v1CertificateBuilder v1CertGen = new JcaX509v1CertificateBuilder(dnName, serialNumber, startDate,

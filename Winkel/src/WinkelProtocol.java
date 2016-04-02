@@ -25,11 +25,11 @@ public class WinkelProtocol {
 	private SecretKey secretKey;
 	Scanner sc = new Scanner(System.in);
 	public static final int TESTCONNECTIONSTATE = -1;
+	public static final int GIVECERTIFICATESTATE = 0;
+	public static final int CHECKCERTIFICATESTATE = 1;
+	public static final int CHANGEPOINTSSTATE = 2;
 
-	public static final int CHECKCERTIFICATESTATE = 0;
-	public static final int CHANGEPOINTSSTATE = 1;
-
-	int state = CHECKCERTIFICATESTATE;
+	int state = GIVECERTIFICATESTATE;
 
 	public WinkelProtocol(WinkelThread wt) {
 		this.wt = wt;
@@ -44,6 +44,10 @@ public class WinkelProtocol {
 		if (theInput != null && theInput.toString().equals("close connection")) {
 
 			theOutput = "close connection";
+		} else if (state == GIVECERTIFICATESTATE) {
+			
+			theOutput = WinkelMain.getWinkelCert().getEncoded();
+			
 		} else if (state == CHECKCERTIFICATESTATE) {
 			byte[] input = (byte[]) theInput;
 			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
@@ -86,7 +90,8 @@ public class WinkelProtocol {
 				else{
 					//legit => winkelCertificaat terugsturen
 					makeSecretKeyWithCard(cardCert);
-					theOutput = encryptOutput(WinkelMain.getWinkelCert().getEncoded());
+					byte[] accepted = { 'a', 'c', 'c', 'e', 'p', 't', 'e', 'd' };
+					theOutput = encryptOutput(accepted);
 					state = CHANGEPOINTSSTATE;
 				}
 			}
