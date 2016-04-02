@@ -39,6 +39,9 @@ public class IdentityCard extends Applet {
 	private static final byte CHECK_CERT_INS = 0x09;
 	private static final byte ENCRYPT_SHOP_ID_INS = 0x11;
 	
+	
+	private static final byte REQ_PSEUDONIEM_INS = 0x40;
+	
 	private final static byte PIN_TRY_LIMIT = (byte) 0x03;
 	private final static byte PIN_SIZE = (byte) 0x04;
 
@@ -53,8 +56,16 @@ public class IdentityCard extends Applet {
 	
 	//NOG 3 pseudoniemen te maken
 	private byte[] pseudoniemColruyt = new byte[250];
+	short colruytPoints;
 	
-	private short[] loyaltypoints;
+	private byte[] pseudoniemDelhaize = new byte[250];
+	short delhaizePoints;
+	
+	private byte[] pseudoniemAlienWare = new byte[250];
+	short alienWarePoints;
+	
+	private byte[] pseudoniemRazor = new byte[250];
+	short razorPoints;
 	
 	public static byte[] privateKeyCard = new byte[] { (byte) 0x30, (byte) 0x7b, (byte) 0x02, (byte) 0x01, (byte) 0x00,
 			(byte) 0x30, (byte) 0x13, (byte) 0x06, (byte) 0x07, (byte) 0x2a, (byte) 0x86, (byte) 0x48, (byte) 0xce,
@@ -149,6 +160,9 @@ public class IdentityCard extends Applet {
 		case ENCRYPT_SHOP_ID_INS:
 			encryptShopId(apdu);
 			break;
+		case REQ_PSEUDONIEM_INS:
+			sendPseudoniem(apdu);
+			break;
 		// If no matching instructions are found it is indicated in the status
 		// word of the response.
 		// This can be done by using this method. As an argument a short is
@@ -158,6 +172,26 @@ public class IdentityCard extends Applet {
 		default:
 			ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
 		}
+	}
+
+	private void sendPseudoniem(APDU apdu) {
+		short dataLength = apdu.setIncomingAndReceive();
+		byte[] pseudoniem = new byte[5];
+		if(idShop==0){//send colruyt pseudoniem
+			pseudoniem = pseudoniemColruyt;
+		}
+		if(idShop==1){//send colruyt pseudoniem
+			pseudoniem = pseudoniemDelhaize;
+		}
+		if(idShop==2){//send colruyt pseudoniem
+			pseudoniem = pseudoniemAlienWare;
+		}
+		if(idShop==3){//send colruyt pseudoniem
+			pseudoniem = pseudoniemRazor;
+		}
+		apdu.setOutgoing();
+		apdu.setOutgoingLength((short) pseudoniem.length);
+		apdu.sendBytesLong(pseudoniem, (short) 0, (short) pseudoniem.length);
 	}
 
 	private void encryptShopId(APDU apdu) {
@@ -232,6 +266,7 @@ public class IdentityCard extends Applet {
 			
 			if(idShop == (short)0){
 				pseudoniemColruyt = pseudoniem;
+				colruytPoints = 0;
 			}else if(idShop == (short)1){
 				//NOG TE SCHRIJVEN
 			}
@@ -253,7 +288,7 @@ public class IdentityCard extends Applet {
 			idShop = byteArrayToShort(idBytes);
 			apdu.setOutgoing();
 			apdu.setOutgoingLength((short) 2);
-			apdu.sendBytesLong(idBytes, (short) 0, (short) 2);
+			apdu.sendBytesLong(shortToByte(idShop), (short) 0, (short) 2);
 		}
 	}
 
