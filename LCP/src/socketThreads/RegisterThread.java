@@ -7,7 +7,7 @@ import java.net.Socket;
 
 import javax.crypto.SecretKey;
 
-import protocols.LCPProtocol;
+import protocols.VerificationProtocol;
 import protocols.RegisterProtocol;
 
 public class RegisterThread extends Thread {
@@ -36,7 +36,7 @@ public class RegisterThread extends Thread {
 			Object input;
 			Object output;
 			try {
-				while ((input = in.readObject()) != null&&!finishedCom) {
+				while ((input = in.readObject()) != null) {
 					output = rp.processInput(input);
 					if(output.equals("close connection"))break;
 					out.writeObject(output);
