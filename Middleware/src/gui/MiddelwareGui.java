@@ -91,7 +91,7 @@ public class MiddelwareGui extends JFrame {
 		private JButton enter = new JButton("Enter");
 		private JButton fill1 = new JButton();
 		private JButton fill2 = new JButton();
-		private JButton fill3 = new JButton();
+		private JButton sendLog = new JButton("Send log");
 
 		public NumPad() {
 
@@ -103,7 +103,6 @@ public class MiddelwareGui extends JFrame {
 
 			fill1.setEnabled(false);
 			fill2.setEnabled(false);
-			fill3.setEnabled(false);
 
 			correction.setBackground(Color.YELLOW);
 			stop.setBackground(Color.RED);
@@ -124,7 +123,7 @@ public class MiddelwareGui extends JFrame {
 			numpadPanel.add(fill1);
 			numpadPanel.add(b0);
 			numpadPanel.add(fill2);
-			numpadPanel.add(fill3);
+			numpadPanel.add(sendLog);
 
 			ButtonListener listener = new ButtonListener();
 
@@ -141,6 +140,7 @@ public class MiddelwareGui extends JFrame {
 			b9.addActionListener(listener);
 			enter.addActionListener(listener);
 			b0.addActionListener(listener);
+			sendLog.addActionListener(listener);
 
 			setLayout(new BorderLayout());
 			add(numpadPanel, BorderLayout.CENTER);

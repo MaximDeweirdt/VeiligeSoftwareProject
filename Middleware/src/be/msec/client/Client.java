@@ -156,7 +156,7 @@ public class Client {
 	}
 	
 	public boolean validStore(short storeID){
-		return storeID > 0 && storeID < 5;
+		return storeID >= 0 && storeID < 4;
 	}
 
 	public void loginCard(String pin) throws Exception {
