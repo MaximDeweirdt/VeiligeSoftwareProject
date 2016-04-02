@@ -1,6 +1,5 @@
 package be.msec.client;
 
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
@@ -11,8 +10,6 @@ import java.security.Security;
 
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
-
-import com.sun.corba.se.impl.ior.ObjectAdapterIdNumber;
 
 import be.msec.client.connection.Connection;
 import be.msec.client.connection.IConnection;
@@ -145,6 +142,10 @@ public class Client {
 	public int getPinTries() {
 		return pinTries;
 	}
+	
+	public void incrementPINTries(){
+		this.pinTries++;
+	}
 
 	public boolean pinValid() {
 		return pinValid;
@@ -162,9 +163,14 @@ public class Client {
 
 		gui.addText("PIN (pin is 1234) = " + pin);
 		String pinInput = pin;
-		byte[] p = new byte[] { (byte) (Integer.parseInt("" + pinInput.charAt(0))),
-				(byte) (Integer.parseInt("" + pinInput.charAt(1))), (byte) (Integer.parseInt("" + pinInput.charAt(2))),
-				(byte) (Integer.parseInt("" + pinInput.charAt(3))), };
+		ByteBuffer buffer = ByteBuffer.allocate(pin.length());
+		for(int i = 0; i < pin.length(); i++){
+			buffer.put((byte) Integer.parseInt(""+pinInput.charAt(i)));
+		}
+		byte [] p = buffer.compact().array();
+//		byte[] p = new byte[] { (byte) (Integer.parseInt("" + pinInput.charAt(0))),
+//				(byte) (Integer.parseInt("" + pinInput.charAt(1))), (byte) (Integer.parseInt("" + pinInput.charAt(2))),
+//				(byte) (Integer.parseInt("" + pinInput.charAt(3))), };
 		a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00, p);
 		r = c.transmit(a);
 		gui.addText(r + "!!!!!!!");

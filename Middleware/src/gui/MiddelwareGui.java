@@ -5,7 +5,6 @@ import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -21,7 +20,6 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
 import be.msec.client.Client;
-import be.msec.client.ClientMain;
 
 public class MiddelwareGui extends JFrame {
 
@@ -107,6 +105,10 @@ public class MiddelwareGui extends JFrame {
 			fill2.setEnabled(false);
 			fill3.setEnabled(false);
 
+			correction.setBackground(Color.YELLOW);
+			stop.setBackground(Color.RED);
+			enter.setBackground(Color.GREEN);
+
 			numpadPanel.add(b1);
 			numpadPanel.add(b2);
 			numpadPanel.add(b3);
@@ -185,6 +187,8 @@ public class MiddelwareGui extends JFrame {
 						short storeID = Short.parseShort(buffer.toString());
 
 						if (!client.validStore(storeID)) {
+							clearBuffer();
+							setTextOfField("Winkel nummer");
 							JDialog.setDefaultLookAndFeelDecorated(true);
 							JOptionPane.showMessageDialog(null, STOREID_INVALID, STOREID_INVALID_TITLE,
 									JOptionPane.ERROR_MESSAGE);
@@ -210,8 +214,8 @@ public class MiddelwareGui extends JFrame {
 				}
 			}
 		}
-		
-		public void clearBuffer(){
+
+		public void clearBuffer() {
 			buffer.setLength(0);
 		}
 
@@ -225,14 +229,14 @@ public class MiddelwareGui extends JFrame {
 
 		numpad.clearBuffer();
 		numpad.setTextOfField("PIN");
-		
+
 		try {
 			client.loginCard(pin);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		if (client.getPinTries() == 1 && !client.pinValid()) {
-			
+
 			JDialog.setDefaultLookAndFeelDecorated(true);
 			JOptionPane.showMessageDialog(null, PIN_INVALID_MSG_1, PIN_INVALID_MSG_TITLE, JOptionPane.ERROR_MESSAGE);
 		} else if (client.getPinTries() == 2 && !client.pinValid()) {
