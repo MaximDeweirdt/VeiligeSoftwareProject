@@ -118,7 +118,11 @@ public class VerificationProtocol {
 		}
 		
 		byte[] shopNumber = shortToByte(shopNR);
+<<<<<<< HEAD
 		byte[] serialNumber = shortToByte((short)cert.getSerialNumber().intValue());
+=======
+		byte[] serialNumber = cert.getSerialNumber().toByteArray();
+>>>>>>> branch 'master' of https://github.com/MaximDeweirdt/VeiligeSoftwareProject.git
 		
 //		int aLen = a.length;
 //		int bLen = b.length;
