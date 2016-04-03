@@ -8,6 +8,11 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+import java.util.Date;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -46,11 +51,15 @@ public class MiddelwareGui extends JFrame {
 
 	public MiddelwareGui(Client client) {
 		this.client = client;
-		area = new JTextArea("Please enter PIN.\n");
+		area = new JTextArea(new SimpleDateFormat("HH.mm.ssss").format(new Date())
+				+ ": Dit is de interface voor de client middleware.\n\n");
 		area.setEnabled(false);
 		area.setDisabledTextColor(Color.black);
+		area.setLineWrap(true);
+		area.setWrapStyleWord(true);
 		scrollPane = new JScrollPane(area);
 		numpad = new NumPad();
+
 		init();
 
 	}
@@ -59,12 +68,65 @@ public class MiddelwareGui extends JFrame {
 		setTitle("Middelware");
 		setSize(1000, 550);
 		setLocationRelativeTo(null);
-		setDefaultCloseOperation(EXIT_ON_CLOSE);
+		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		addWindowListener(new WindowListener() {
 
+			@Override
+			public void windowClosing(WindowEvent e) {
+				int confirm = JOptionPane.showOptionDialog(null, QUIT, QUIT_TITLE, JOptionPane.YES_NO_CANCEL_OPTION,
+						JOptionPane.QUESTION_MESSAGE, null, null, null);
+				if (confirm == JOptionPane.YES_OPTION) {
+					try {
+						client.closeConnections();
+						System.exit(-1);
+					} catch (Exception e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+				}
+
+			}
+
+			@Override
+			public void windowClosed(WindowEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void windowActivated(WindowEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void windowDeactivated(WindowEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void windowDeiconified(WindowEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void windowIconified(WindowEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void windowOpened(WindowEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+		});
 		Container pane = getContentPane();
 		pane.setLayout(new FlowLayout());
 		pane.add(numpad);
-		scrollPane.setPreferredSize(new Dimension(650, 500));
+		scrollPane.setPreferredSize(new Dimension(600, 500));
 		pane.add(scrollPane);
 	}
 
@@ -107,6 +169,7 @@ public class MiddelwareGui extends JFrame {
 			correction.setBackground(Color.YELLOW);
 			stop.setBackground(Color.RED);
 			enter.setBackground(Color.GREEN);
+			sendLog.setBackground(Color.CYAN);
 
 			numpadPanel.add(b1);
 			numpadPanel.add(b2);
@@ -208,6 +271,9 @@ public class MiddelwareGui extends JFrame {
 
 					}
 
+				} else if (arg0.getSource() == sendLog) {
+					// TODO: send log to LCP
+					setTextOfField("Sending log to LCP");
 				} else {
 					buffer.append(((JButton) arg0.getSource()).getText());
 					jtf.setText(buffer.toString());
@@ -257,7 +323,7 @@ public class MiddelwareGui extends JFrame {
 	}
 
 	public void addText(String text) {
-		area.append(text + "\n");
+		area.append(new SimpleDateFormat("HH.mm.ssss").format(new Date()) + ": " + text + "\n");
 	}
 
 }
