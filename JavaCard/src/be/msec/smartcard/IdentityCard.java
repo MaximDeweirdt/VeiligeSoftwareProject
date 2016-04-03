@@ -42,6 +42,7 @@ public class IdentityCard extends Applet {
 	
 	private static final byte REQ_PSEUDONIEM_INS = 0x40;
 	private static final byte CERT_SHOP_INFO_INS = 0x41;
+	private static final byte KEY_AGREEMENT_SHOP_INS = 0x42;
 	
 	private final static byte PIN_TRY_LIMIT = (byte) 0x03;
 	private final static byte PIN_SIZE = (byte) 0x04;
@@ -54,6 +55,9 @@ public class IdentityCard extends Applet {
 	private OwnerPIN pin;
 	private DESKey secretDesKeyWithLCP;
 	private Cipher cipherWithLCP;
+	
+	private DESKey secretDesKeyWithShop;
+	private Cipher cipherWithShop;
 	
 	//NOG 3 pseudoniemen te maken
 	private byte[] pseudoniemColruyt = new byte[250];
@@ -172,6 +176,9 @@ public class IdentityCard extends Applet {
 		case CERT_SHOP_INFO_INS:
 			safeCertInfoShop(apdu);
 			break;
+		case KEY_AGREEMENT_SHOP_INS:
+			keyAgreementSHOP(apdu);
+			break;
 		// If no matching instructions are found it is indicated in the status
 		// word of the response.
 		// This can be done by using this method. As an argument a short is
@@ -181,6 +188,55 @@ public class IdentityCard extends Applet {
 		default:
 			ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
 		}
+	}
+
+	private void keyAgreementSHOP(APDU apdu) {
+		// get public key out of the data from the apdu data field
+		apdu.setIncomingAndReceive();
+		byte[] pubParamWshop;
+		if(idShop == 0){
+			pubParamWshop = QparamColruyt;
+		}else if(idShop == 1){
+			pubParamWshop = QparamDelhaize;
+		}else if(idShop == 2){
+			pubParamWshop = QparamAlienWare;
+		}else{
+			pubParamWshop = QparamRazor;
+		}
+		short length = (short) (pubParamWshop.length+1);
+		byte[] pubParamw = new byte[length];
+		pubParamWshop[0] = (byte)0x04;
+		byte test = pubParamWshop[0];
+		Util.arrayCopy(pubParamWshop, (short) 0, pubParamw, (short) 1, (short)pubParamWshop.length);
+		byte[] secret = new byte[250];
+
+		// create symmetric key with public key
+		PrivateKey cardPrivKey = getprivateKey();
+		KeyAgreement keyAgreement= KeyAgreement.getInstance(KeyAgreement.ALG_EC_SVDP_DH, false);
+		keyAgreement.init(cardPrivKey);
+		//short secretKeyLength = keyAgreement.generateSecret(pubParamw, (short)0, (short) pubParamw.length, secret, (short)0);
+		
+		//copy secret key to secretkey byte array with adjusted size
+		//byte[] secretKey = new byte[secretKeyLength];
+		//Util.arrayCopy(secret, (short)0, secretKey,(short) 0, secretKeyLength);
+		
+		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+		else{
+			//generateCipherShop(secretKey);
+			apdu.setOutgoing();
+			apdu.setOutgoingLength((short) pubParamWshop.length);
+			apdu.sendBytesLong(pubParamWshop, (short) 0, (short) pubParamWshop.length);
+		}
+		
+	}
+
+	private void generateCipherShop(byte[] secretKey) {
+		DESKey m_desKey = (DESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_DES, KeyBuilder.LENGTH_DES,false);
+		// SET KEY VALUE
+		m_desKey.setKey(secretKey, (short) 0); 
+		secretDesKeyWithShop = m_desKey;
+		cipherWithShop = Cipher.getInstance(Cipher.ALG_DES_ECB_NOPAD, false);
+		
 	}
 
 	private void safeCertInfoShop(APDU apdu) {
@@ -218,9 +274,14 @@ public class IdentityCard extends Applet {
 			QparamRazor = QparamShop;
 			idShop = 3;
 		}
-		apdu.setOutgoing();
-		apdu.setOutgoingLength((short) serialNumber.length);
-		apdu.sendBytesLong(serialNumber, (short) 0, (short) serialNumber.length);
+		
+		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+		else{
+			apdu.setOutgoing();
+			apdu.setOutgoingLength((short) QparamShop.length);
+			apdu.sendBytesLong(QparamShop, (short) 0, (short) QparamShop.length);
+		}
+
 
 	}
 
@@ -239,9 +300,13 @@ public class IdentityCard extends Applet {
 		if(idShop==3){//send colruyt pseudoniem
 			pseudoniem = pseudoniemRazor;
 		}
-		apdu.setOutgoing();
-		apdu.setOutgoingLength((short) pseudoniem.length);
-		apdu.sendBytesLong(pseudoniem, (short) 0, (short) pseudoniem.length);
+		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+		else{
+			apdu.setOutgoing();
+			apdu.setOutgoingLength((short) pseudoniem.length);
+			apdu.sendBytesLong(pseudoniem, (short) 0, (short) pseudoniem.length);
+		}
+
 	}
 
 	private void encryptShopId(APDU apdu) {
@@ -258,10 +323,12 @@ public class IdentityCard extends Applet {
 		shopIdByte[6] = (byte) 0x00;
 		shopIdByte[7] = (byte) 0x00;
 		byte[] encryptedShopId = encryptDataLCP(shopIdByte);
-		
-		apdu.setOutgoing();
-		apdu.setOutgoingLength((short) encryptedShopId.length);
-		apdu.sendBytesLong(encryptedShopId, (short) 0, (short) encryptedShopId.length);
+		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+		else{
+			apdu.setOutgoing();
+			apdu.setOutgoingLength((short) encryptedShopId.length);
+			apdu.sendBytesLong(encryptedShopId, (short) 0, (short) encryptedShopId.length);
+		}
 	}
 
 	private void checkCertificateCorrect(APDU apdu) {
@@ -353,6 +420,20 @@ public class IdentityCard extends Applet {
 		byte[] encryptedData = new byte[data.length];
 		cipherWithLCP.init(secretDesKeyWithLCP,Cipher.MODE_ENCRYPT);
 		cipherWithLCP.doFinal(data, (short) 0 , (short) data.length, encryptedData, (short) 0); 
+		return encryptedData;
+	}
+	
+	private byte[] decryptDataShop(byte[] dataEncrypted){
+		byte[] data = new byte[dataEncrypted.length];
+		cipherWithShop.init(secretDesKeyWithShop,Cipher.MODE_DECRYPT);
+		cipherWithShop.doFinal(dataEncrypted, (short) 0 , (short) dataEncrypted.length, data, (short) 0); 
+		return data;
+	}
+	
+	private byte[] encryptDataShop(byte[] data){
+		byte[] encryptedData = new byte[data.length];
+		cipherWithShop.init(secretDesKeyWithShop,Cipher.MODE_ENCRYPT);
+		cipherWithShop.doFinal(data, (short) 0 , (short) data.length, encryptedData, (short) 0); 
 		return encryptedData;
 	}
 
