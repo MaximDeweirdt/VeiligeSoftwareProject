@@ -18,6 +18,7 @@ import javacard.security.KeyBuilder;
 import javacard.security.PrivateKey;
 import javacard.security.PublicKey;
 import javacardx.crypto.Cipher;
+import javacardx.framework.math.BigNumber;
 
 public class IdentityCard extends Applet {
 	public static byte[] cardCertificate ={
@@ -213,29 +214,27 @@ public class IdentityCard extends Applet {
 		}else{
 			pubParamWshop = QparamRazor;
 		}
-		short length = (short) (pubParamWshop.length+1);
+		short length = (short) (pubParamWshop.length-3);
 		byte[] pubParamw = new byte[length];
-		pubParamWshop[0] = (byte)0x04;
-		byte test = pubParamWshop[0];
-		Util.arrayCopy(pubParamWshop, (short) 0, pubParamw, (short) 1, (short)pubParamWshop.length);
+		Util.arrayCopy(pubParamWshop, (short) 3, pubParamw, (short) 0, (short)length);
 		byte[] secret = new byte[250];
 
 		// create symmetric key with public key
 		PrivateKey cardPrivKey = getprivateKey();
 		KeyAgreement keyAgreement= KeyAgreement.getInstance(KeyAgreement.ALG_EC_SVDP_DH, false);
 		keyAgreement.init(cardPrivKey);
-		//short secretKeyLength = keyAgreement.generateSecret(pubParamw, (short)0, (short) pubParamw.length, secret, (short)0);
+		short secretKeyLength = keyAgreement.generateSecret(pubParamw, (short)0, (short) pubParamw.length, secret, (short)0);
 		
 		//copy secret key to secretkey byte array with adjusted size
-		//byte[] secretKey = new byte[secretKeyLength];
-		//Util.arrayCopy(secret, (short)0, secretKey,(short) 0, secretKeyLength);
+		byte[] secretKey = new byte[secretKeyLength];
+		Util.arrayCopy(secret, (short)0, secretKey,(short) 0, secretKeyLength);
 		
 		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
 		else{
-			//generateCipherShop(secretKey);
+			generateCipherShop(secretKey);
 			apdu.setOutgoing();
-			apdu.setOutgoingLength((short) pubParamWshop.length);
-			apdu.sendBytesLong(pubParamWshop, (short) 0, (short) pubParamWshop.length);
+			apdu.setOutgoingLength((short) secretKey.length);
+			apdu.sendBytesLong(secretKey, (short) 0, (short) secretKey.length);
 		}
 		
 	}

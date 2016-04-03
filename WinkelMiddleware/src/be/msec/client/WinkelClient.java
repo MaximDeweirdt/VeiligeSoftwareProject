@@ -217,6 +217,7 @@ public class WinkelClient {
 		a = new CommandAPDU(IDENTITY_CARD_CLA, KEY_AGREEMENT_SHOP_INS , 0x00, 0x00,new byte[]{0x00});
 		r = c.transmit(a);
 		System.out.println("key agreement status : " + r);
+		byte[] seckey = r.getData();
 		System.out.println("secret key = " + new BigInteger(1,r.getData()).toString(16));
 	}
 
