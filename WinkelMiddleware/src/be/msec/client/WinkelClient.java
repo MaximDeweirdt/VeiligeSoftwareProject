@@ -60,6 +60,7 @@ public class WinkelClient {
 	
 	private static final byte REQ_PSEUDONIEM_INS = 0x40;
 	private static final byte CERT_SHOP_INFO_INS = 0x41;
+	private static final byte KEY_AGREEMENT_SHOP_INS = 0x42;
 	
 	
 	
@@ -180,10 +181,12 @@ public class WinkelClient {
 			
 			
 			input = (byte[])winkelIn.readObject();//accepted of denied naargelang het cert van kaart
-			
+			System.out.println("input accepted pseudoniem : " + new BigInteger(1,input).toString(16));
 			
 			
 			//nu beschikken ze alletwee over elkaars public key en zullen ze dus ne symmetric key kunnen vormen elk
+			keyAgreementWithShop(a,r,c);
+			
 			input = shortToByte((short)5);
 			while(byteArrayToShort(input)!=(short)0){
 				
@@ -210,11 +213,18 @@ public class WinkelClient {
 
 	}
 	
+	private static void keyAgreementWithShop(CommandAPDU a, ResponseAPDU r, IConnection c) throws Exception {
+		a = new CommandAPDU(IDENTITY_CARD_CLA, KEY_AGREEMENT_SHOP_INS , 0x00, 0x00,new byte[]{0x00});
+		r = c.transmit(a);
+		System.out.println("key agreement status : " + r);
+		System.out.println("secret key = " + new BigInteger(1,r.getData()).toString(16));
+	}
+
 	private static void setCertInfoShop(CommandAPDU a, ResponseAPDU r, IConnection c, byte[] input) throws Exception {
 		a = new CommandAPDU(IDENTITY_CARD_CLA, CERT_SHOP_INFO_INS, (byte) (input.length&0xff), 0x00,input);
 		r = c.transmit(a);
-		System.out.println("cert winkel : " + r);
-		System.out.println("cert = " + new BigInteger(1,r.getData()).toString(16));
+		System.out.println("cert parsing status : " + r);
+		System.out.println("cert van de winkel= " + new BigInteger(1,r.getData()).toString(16));
 	}
 
 	private static void setShopIdAndPseudoniem(CommandAPDU a, ResponseAPDU r, IConnection c, byte[] shopId) throws Exception {

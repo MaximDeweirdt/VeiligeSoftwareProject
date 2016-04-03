@@ -50,6 +50,16 @@ public class IdentityCard extends Applet {
 	private final static short SW_VERIFICATION_FAILED = 0x6300;
 	private final static short SW_PIN_VERIFICATION_REQUIRED = 0x6301;
 
+	private static byte[] publicKeyParameterQFromLCP = new byte[] { (byte) 0x04, (byte) 0xa9, (byte) 0xfe, (byte) 0x35,
+			(byte) 0x45, (byte) 0xf0, (byte) 0xaf, (byte) 0x79, (byte) 0x60, (byte) 0x8f, (byte) 0xd5, (byte) 0x79,
+			(byte) 0x09, (byte) 0xcb, (byte) 0x32, (byte) 0x9b, (byte) 0x77, (byte) 0xde, (byte) 0x96, (byte) 0x8a,
+			(byte) 0x9c, (byte) 0x2e, (byte) 0x3f, (byte) 0x3c, (byte) 0x63, (byte) 0x8d, (byte) 0xc4, (byte) 0x36,
+			(byte) 0x94, (byte) 0x3e, (byte) 0x62, (byte) 0x1c, (byte) 0x95, (byte) 0xb3, (byte) 0xa0, (byte) 0x4b,
+			(byte) 0x3b, (byte) 0x90, (byte) 0xab, (byte) 0x0b, (byte) 0xdf, (byte) 0x14, (byte) 0x19, (byte) 0xba,
+			(byte) 0x0a, (byte) 0xed, (byte) 0x4d, (byte) 0x90, (byte) 0x2c
+
+	};
+	
 	private short idShop;
 	
 	private OwnerPIN pin;
@@ -439,11 +449,8 @@ public class IdentityCard extends Applet {
 
 	private void keyAgreementLCP(APDU apdu) {
 		// get public key out of the data from the apdu data field
-		byte[] buffer = apdu.getBuffer();
 		short length2 = apdu.setIncomingAndReceive();
-		short length = byteToShort(buffer[ISO7816.OFFSET_P1]);
-		byte[] pubParamWOther = new byte[length];
-		Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, pubParamWOther, (short) 0, length);
+		byte[] pubParamWOther = publicKeyParameterQFromLCP;
 		
 		byte[] secret = new byte[250];
 		
