@@ -47,7 +47,7 @@ public class WinkelProtocol {
 		} else if (state == GIVECERTIFICATESTATE) {
 			
 			theOutput = WinkelMain.getWinkelCert().getEncoded();
-			
+			state = CHECKCERTIFICATESTATE;
 		} else if (state == CHECKCERTIFICATESTATE) {
 			byte[] input = (byte[]) theInput;
 			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
