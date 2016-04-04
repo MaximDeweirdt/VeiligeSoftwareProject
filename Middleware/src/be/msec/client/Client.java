@@ -121,8 +121,8 @@ public class Client {
 //		byte[] p = new byte[] { (byte) (Integer.parseInt("" + pinInput.charAt(0))),
 //				(byte) (Integer.parseInt("" + pinInput.charAt(1))), (byte) (Integer.parseInt("" + pinInput.charAt(2))),
 //				(byte) (Integer.parseInt("" + pinInput.charAt(3))), };
-		a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00, p);
 		long time1 = System.currentTimeMillis();
+		a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00, p);
 		r = c.transmit(a);
 		long time2 = System.currentTimeMillis();
 		gui.addText("Tranmissie en controle duurde: "+(time2-time1)+" milliseconden.");
@@ -145,10 +145,9 @@ public class Client {
 	public void keyAgreementLCPAndCard() throws Exception {
 		gui.addText("Er wordt nu gestart de Key Agreement tussen de LCP en de smartcard.");
 		KeyFactory kf = KeyFactory.getInstance("EC", "BC"); // or "EC" or
-															// whatever
+		long time1 = System.currentTimeMillis();													// whatever
 		a = new CommandAPDU(IDENTITY_CARD_CLA, KEY_AGREEMENT_LCP_INS, 0x00,
 				0x00, new byte[]{0x00});
-		long time1 = System.currentTimeMillis();
 		r = c.transmit(a);
 		long time2 = System.currentTimeMillis();
 		gui.addText("Communicatie tussen LCP en smartcard duurde: " + (time2-time1) + " milliseconden.");
@@ -162,15 +161,15 @@ public class Client {
 		gui.addText("Opvragen van het certificaat van de LCP. Dit gebeurt in twee stappen.");
 		ByteBuffer bb = ByteBuffer.allocate(263);
 		cardCert = new byte[263];
-		a = new CommandAPDU(IDENTITY_CARD_CLA, GET_PART1_CERTIFICATE, 0x00, 0x00, new byte[] { (byte) 0xff });
 		long time1 = System.currentTimeMillis();
+		a = new CommandAPDU(IDENTITY_CARD_CLA, GET_PART1_CERTIFICATE, 0x00, 0x00, new byte[] { (byte) 0xff });
 		r = c.transmit(a);
 		long time2 = System.currentTimeMillis();
 		gui.addText("Eerste deel van het certificaat is ontvangen:  " + r);
 		gui.addText("Het versturen en ontvangen van het eerste deel duurde: " +(time2-time1) +" milliseconden.");
 		bb.put(r.getData());
-		a = new CommandAPDU(IDENTITY_CARD_CLA, GET_PART2_CERTIFICATE, 0x00, 0x00, new byte[] { (byte) 0xff });
 		time1 = System.currentTimeMillis();
+		a = new CommandAPDU(IDENTITY_CARD_CLA, GET_PART2_CERTIFICATE, 0x00, 0x00, new byte[] { (byte) 0xff });
 		r = c.transmit(a);
 		time2 = System.currentTimeMillis();
 		gui.addText("Tweede deel van het certificaat ontvangen: " + r);
@@ -190,47 +189,64 @@ public class Client {
 
 	private void checkCorrectCertificate(byte[] input) throws Exception {
 		gui.addText("Het certificaat van de LCP wordt gecontroleerd.");
-		a = new CommandAPDU(IDENTITY_CARD_CLA, CHECK_CERT_INS, (byte) (input.length & 0xff), 0x00, input);
 		long time1= System.currentTimeMillis();
+		a = new CommandAPDU(IDENTITY_CARD_CLA, CHECK_CERT_INS, (byte) (input.length & 0xff), 0x00, input);
 		r = c.transmit(a);
 		long time2 = System.currentTimeMillis();
 		gui.addText("De controle duurde: " +(time2-time1) + " milliseconden.");
 		gui.addText(r.toString());
 		String response = new String(r.getData());
 		if (!response.equals("accepted")) {
-			gui.addText("Certificaat werd niet geaccepteerd");
+			gui.addText("Certificaat werd niet geaccepteerd.\n");
 			correctCardCert = false;
 		} else {
-			gui.addText("Certificaat werd geaccepteerd");
+			gui.addText("Certificaat werd geaccepteerd.\n");
 			correctCardCert = true;
 		}
 	}
 
 	public void addStoreProcedure(short storeID) throws Exception {
+		
+		gui.addText("De keuze van winkel wordt nu geencrypteerd en dan doorgestuurd naar de LCP.");
+		
 		byte [] winkelKeuze = ClientMain.shortToByte(storeID);
+		long time1 = System.currentTimeMillis();
 		a = new CommandAPDU(IDENTITY_CARD_CLA, ENCRYPT_SHOP_ID_INS, (byte) (winkelKeuze.length&0xff), 0x00,winkelKeuze);
 		r = c.transmit(a);
+		long time2 = System.currentTimeMillis();
+		gui.addText("Tranmissie en encoderen duurde in totaal " + (time2-time1) + " milliseconden.");
 		byte[] encryptedShopId = r.getData();
-		gui.addText(r + "!!");
-		gui.addText(new BigInteger(1,r.getData()).toString(16));
+		gui.addText(r.toString());
+		gui.addText("Het geencrypteerde winkelID is: " + new BigInteger(1,r.getData()).toString(16));
+		gui.addText("Dit ID wordt nu naar de LCP gestuurd die een pseudoniem voor de kaart zal terug sturen.");
 		out.writeObject(encryptedShopId);
 		byte [] textinCipher = (byte[]) in.readObject();
-		gui.addText(new BigInteger(1,textinCipher).toString(16));
+		gui.addText("Het geencrypteerde pseudoniem: " + new BigInteger(1,textinCipher).toString(16) + "\n");
 		setShopIdAndPseudoniem(winkelKeuze, textinCipher);
 	}
 	
 	private void setShopIdAndPseudoniem(byte[] shopId, byte[] textinCipher) throws Exception{
 		//versturen van winkelkeuze naar de kaart
+		gui.addText("De kaart wordt nu klaar gemaakt voor gebruik. Het pseudomiem voor de klant wordt op de kaart geplaatst.");
+		gui.addText("Als eerste stap wordt het winkelID op de kaart geplaatst.");
+		long time1 = System.currentTimeMillis();
 		a = new CommandAPDU(IDENTITY_CARD_CLA, SET_ID_SHOP_INS, (byte) (shopId.length&0xff), 0x00,shopId);
 		r = c.transmit(a);
+		long time2 = System.currentTimeMillis();
+		gui.addText("Het plaatsen van het winkelID duurde " +(time2-time1)+" milliseconden.");
 		gui.addText(r.toString());
 		short lngth = (short) textinCipher.length;
 		//System.out.println(byteToShort((byte)(lngth&0xff)));
 		//setten van pseudoniem in de kaart
 		byte [] pseudoniem = textinCipher;
+		gui.addText("Het pseudoniem zal nu op de kaart geplaasts worden bij het correcte winkelID.");
+		time1 = System.currentTimeMillis();
 		a = new CommandAPDU(IDENTITY_CARD_CLA, SET_PSEUDONIEM_INS, lngth, 0x00,pseudoniem);
 		r = c.transmit(a);
-		System.out.println(r);
+		time2 = System.currentTimeMillis();
+		gui.addText("Het plaatsen van het pseudoniem duurde " + (time2-time1) + " milliseconden.");
+		gui.addText(r.toString());
+		gui.addText("\n De kaart is nu klaar voor gebruik.");
 	//	System.err.println(byteArrayToShort(r.getData()));
 	}
 	

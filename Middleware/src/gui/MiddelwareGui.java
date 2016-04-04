@@ -51,8 +51,7 @@ public class MiddelwareGui extends JFrame {
 
 	public MiddelwareGui(Client client) {
 		this.client = client;
-		area = new JTextArea(new SimpleDateFormat("HH.mm.ssss").format(new Date())
-				+ ": Dit is de interface voor de client middleware.\n\n");
+		area = new JTextArea("Dit is de interface voor de client middleware.\n\n");
 		area.setEnabled(false);
 		area.setDisabledTextColor(Color.black);
 		area.setLineWrap(true);
@@ -323,7 +322,7 @@ public class MiddelwareGui extends JFrame {
 	}
 
 	public void addText(String text) {
-		area.append(new SimpleDateFormat("HH.mm.ssss").format(new Date()) + ": " + text + "\n");
+		area.append(text + "\n");
 	}
 
 }
