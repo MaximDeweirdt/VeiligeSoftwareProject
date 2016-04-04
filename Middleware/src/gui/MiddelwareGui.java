@@ -52,10 +52,6 @@ public class MiddelwareGui extends JFrame {
 	public MiddelwareGui(Client client) {
 		this.client = client;
 		area = new JTextArea("Dit is de interface voor de client middleware.\n\n");
-		area.setEnabled(false);
-		area.setDisabledTextColor(Color.black);
-		area.setLineWrap(true);
-		area.setWrapStyleWord(true);
 		scrollPane = new JScrollPane(area);
 		numpad = new NumPad();
 
@@ -126,6 +122,10 @@ public class MiddelwareGui extends JFrame {
 		pane.setLayout(new FlowLayout());
 		pane.add(numpad);
 		scrollPane.setPreferredSize(new Dimension(600, 500));
+		area.setEnabled(false);
+		area.setDisabledTextColor(Color.black);
+		area.setLineWrap(true);
+		area.setWrapStyleWord(true);
 		pane.add(scrollPane);
 	}
 

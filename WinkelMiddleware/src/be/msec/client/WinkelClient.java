@@ -181,7 +181,7 @@ public class WinkelClient {
 			
 			
 			input = (byte[])winkelIn.readObject();//accepted of denied naargelang het cert van kaart
-			System.out.println("input accepted pseudoniem : " + new BigInteger(1,input).toString(16));
+			//INSTRUCTION CARD CHECK ACCPETED OR DENIED (deze input tekst is geencrypteerd)
 			
 			
 			//nu beschikken ze alletwee over elkaars public key en zullen ze dus ne symmetric key kunnen vormen elk
@@ -243,7 +243,13 @@ public class WinkelClient {
 		pseudoniem = r.getData();
 		System.out.println("pseudoniem = " + r);
 		System.out.println("pseudoniem = " + new BigInteger(1,pseudoniem).toString(16));
-		return pseudoniem;
+		int i = 0;
+		while(pseudoniem[i]==0){
+			i++;
+		}
+		byte[] dest = new byte[pseudoniem.length-i];
+		System.arraycopy(pseudoniem, i, dest, 0, pseudoniem.length-i);
+		return dest;
 	}
 
 	private static boolean checkCorrectCertificate(CommandAPDU a, ResponseAPDU r, IConnection c, byte[] input) throws Exception {

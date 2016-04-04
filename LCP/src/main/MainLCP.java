@@ -15,6 +15,7 @@ import java.security.cert.X509Certificate;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 
+import gui.LCPGui;
 import socketListeners.RegisterSocketListenerThread;
 import socketListeners.VerificationSocketListenerThread;
 
@@ -27,9 +28,10 @@ public class MainLCP {
 	private static X509Certificate delhaizeCert;
 	private static Map<X509Certificate,Boolean> certList = new HashMap<X509Certificate, Boolean>();
 	
+	
 	public static void main(String[] args) throws Exception {
 		
-		
+		new LCPGui();
 		makeKeysAndCerts();
 //		winkelDataList = makeWinkelData();
 		
