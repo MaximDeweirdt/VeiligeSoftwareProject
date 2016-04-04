@@ -25,6 +25,7 @@ import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
+import gui.LCPGui;
 import main.MainLCP;
 import socketListeners.RegisterSocketListenerThread;
 import socketThreads.RegisterThread;
@@ -62,15 +63,16 @@ public class RegisterProtocol {
 			X509Certificate cardCert = (X509Certificate) certFactory.generateCertificate(in);
 
 			try {
+				LCPGui.addText("Het certificaat van de kaart wordt nu gecontroleerd.");
 				cardCert.checkValidity();
 				cardCert.verify(MainLCP.getPublicKeyLCP());
-				System.out.println("signature is correct");
+				LCPGui.addText("De signature is correct.");
 				makeSecretKey(cardCert);
 				byte[] accepted = { 'a', 'c', 'c', 'e', 'p', 't', 'e', 'd' };
 				theOutput = encryptOutput(accepted);
 				state = KIESWINKELSTATE;
 			} catch (Exception e) {
-				System.err.println("signature isn't correct");
+				LCPGui.addText("De signature is niet correct.");
 				byte[] denied = { 'd', 'e', 'n', 'i', 'e', 'd', 'e', 'd' };
 				theOutput = encryptOutput(denied);
 				state = CHECKCERTIFICATESTATE;
@@ -85,27 +87,35 @@ public class RegisterProtocol {
 			
 			switch (winkelNummer) {
 			case 0:
-				System.out.println("winkel 0 gekozen");
+				LCPGui.addText("WinkelID 0 gekozen. Dit ID komt overeen met Colruyt.");
+				LCPGui.addText("Er wordt een pseudoniem gemaakt voor de klant in de vorm van een certificaat.");
 				shopPseudoCert = makePseudonimCert(0);
 				MainLCP.addCertToList(shopPseudoCert);
+				LCPGui.addText("Dit certificaat wordt nu verstuurd naar de klant");
 				theOutput = encryptOutput(shopPseudoCert.getEncoded());
 				break;
 			case 1:
-				System.out.println("winkel 1 gekozen");
+				LCPGui.addText("WinkelID 1 gekozen. Dit ID komt overeen met Delhaize.");
+				LCPGui.addText("Er wordt een pseudoniem gemaakt voor de klant in de vorm van een certificaat.");
 				shopPseudoCert = makePseudonimCert(1);
 				MainLCP.addCertToList(shopPseudoCert);
+				LCPGui.addText("Dit certificaat wordt nu verstuurd naar de klant");
 				theOutput = encryptOutput(shopPseudoCert.getEncoded());
 				break;
 			case 2:
-				System.out.println("winkel 2 gekozen");
+				System.out.println("WinkelID 2 gekozen. Dit ID komt overeen met Alienware.");
+				LCPGui.addText("Er wordt een pseudoniem gemaakt voor de klant in de vorm van een certificaat.");
 				shopPseudoCert = makePseudonimCert(2);
 				MainLCP.addCertToList(shopPseudoCert);
+				LCPGui.addText("Dit certificaat wordt nu verstuurd naar de klant");
 				theOutput = encryptOutput(shopPseudoCert.getEncoded());
 				break;
 			case 3:
-				System.out.println("winkel 3 gekozen");
+				System.out.println("WinkelID 3 gekozen. Dit komt overeen met Razor.");
+				LCPGui.addText("Er wordt een pseudoniem gemaakt voor de klant in de vorm van een certificaat.");
 				shopPseudoCert = makePseudonimCert(3);
 				MainLCP.addCertToList(shopPseudoCert);
+				LCPGui.addText("Dit certificaat wordt nu verstuurd naar de klant");
 				theOutput = encryptOutput(shopPseudoCert.getEncoded());
 				break;
 			}
