@@ -61,6 +61,9 @@ public class WinkelClient {
 	private static final byte REQ_PSEUDONIEM_INS = 0x40;
 	private static final byte CERT_SHOP_INFO_INS = 0x41;
 	private static final byte KEY_AGREEMENT_SHOP_INS = 0x42;
+	private static final byte DECRYPT_SHOP_TEXT_INS = 0x43;
+	private static final byte REQ_SHOP_POINTS_INS = 0x44;
+	private static final byte UPD_POINTS_INS = 0x45;
 	
 	
 	
@@ -182,17 +185,19 @@ public class WinkelClient {
 			
 			input = (byte[])winkelIn.readObject();//accepted of denied naargelang het cert van kaart
 			//INSTRUCTION CARD CHECK ACCPETED OR DENIED (deze input tekst is geencrypteerd)
-			
+			String accepted = decryptShopCardText(a,r,c,input);
+			//TEKST BALLON OP LATEN KOMEN ALS DE RESPONSE GELIJK IS AAN DENIEDED => weergegeven dat hij opnieuw moet registreren bij de LCP voor diene winkel
 			
 			//nu beschikken ze alletwee over elkaars public key en zullen ze dus ne symmetric key kunnen vormen elk
 			keyAgreementWithShop(a,r,c);
 			
-			input = shortToByte((short)5);
+			//input = shortToByte((short)5);
 			while(byteArrayToShort(input)!=(short)0){
-				
-				byte[] aantalpunten = input; //hier moet het aantal punten op de kaart komen, geencrypteerd
-				winkelOut.writeObject(aantalpunten);
+				byte[] encryptedPunten = requestShopPoints(a,r,c); //hier moet het aantal punten op de kaart komen, geencrypteerd
+				winkelOut.writeObject(encryptedPunten);
 				input = (byte[]) winkelIn.readObject(); //de wijziging in punten terug krijgen
+				updatePointsShop(a,r,c,input);
+				
 				//dit herhalen tot als we allemaal content zijn dan een 0 van de winkel dan stoppen die handel
 				//da zou het moeten zijn denk'k
 			}
@@ -213,6 +218,36 @@ public class WinkelClient {
 
 	}
 	
+
+	private static void updatePointsShop(CommandAPDU a, ResponseAPDU r, IConnection c, byte[] encryptedChangedPoints) throws Exception {
+		a = new CommandAPDU(IDENTITY_CARD_CLA, UPD_POINTS_INS ,(byte) (encryptedChangedPoints.length&0xff), 0x00,encryptedChangedPoints);
+		r = c.transmit(a);
+		System.out.println("update points status" + r);
+		byte[] pointsByte = r.getData();
+		System.out.println("new points = " + byteArrayToShort(pointsByte));
+	}
+
+
+	private static byte[] requestShopPoints(CommandAPDU a, ResponseAPDU r, IConnection c) throws Exception {
+		a = new CommandAPDU(IDENTITY_CARD_CLA, REQ_SHOP_POINTS_INS ,0x00, 0x00,new byte[]{0x00});
+		r = c.transmit(a);
+		byte[] textByte = r.getData();
+		byte[] encryptedPunten = r.getData();
+		System.out.println(r);
+		System.out.println("Encrtypted punten = " + new BigInteger(1,encryptedPunten).toString(16));
+		return encryptedPunten;
+	}
+
+	private static String decryptShopCardText(CommandAPDU a, ResponseAPDU r, IConnection c, byte[] decryptedText) throws Exception {
+		a = new CommandAPDU(IDENTITY_CARD_CLA, DECRYPT_SHOP_TEXT_INS ,(byte) (decryptedText.length&0xff), 0x00,decryptedText);
+		r = c.transmit(a);
+		byte[] textByte = r.getData();
+		String text = new String(textByte);
+		System.out.println(r);
+		System.out.println("Accpeted or denied pseudoniem = " + text);
+		return text;
+	}
+
 	private static void keyAgreementWithShop(CommandAPDU a, ResponseAPDU r, IConnection c) throws Exception {
 		a = new CommandAPDU(IDENTITY_CARD_CLA, KEY_AGREEMENT_SHOP_INS , 0x00, 0x00,new byte[]{0x00});
 		r = c.transmit(a);

@@ -44,6 +44,9 @@ public class IdentityCard extends Applet {
 	private static final byte REQ_PSEUDONIEM_INS = 0x40;
 	private static final byte CERT_SHOP_INFO_INS = 0x41;
 	private static final byte KEY_AGREEMENT_SHOP_INS = 0x42;
+	private static final byte DECRYPT_SHOP_TEXT_INS = 0x43;
+	private static final byte REQ_SHOP_POINTS_INS = 0x44;
+	private static final byte UPD_POINTS_INS = 0x45;
 	
 	private final static byte PIN_TRY_LIMIT = (byte) 0x03;
 	private final static byte PIN_SIZE = (byte) 0x04;
@@ -190,6 +193,15 @@ public class IdentityCard extends Applet {
 		case KEY_AGREEMENT_SHOP_INS:
 			keyAgreementSHOP(apdu);
 			break;
+		case DECRYPT_SHOP_TEXT_INS:
+			decryptShopText(apdu);
+			break;
+		case REQ_SHOP_POINTS_INS:
+			encryptShopPoints(apdu);
+			break;
+		case UPD_POINTS_INS:
+			updatePoints(apdu);
+			break;
 		// If no matching instructions are found it is indicated in the status
 		// word of the response.
 		// This can be done by using this method. As an argument a short is
@@ -199,6 +211,113 @@ public class IdentityCard extends Applet {
 		default:
 			ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
 		}
+	}
+
+	private void updatePoints(APDU apdu) {
+		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+		else{
+			//load text
+			byte[] buffer = apdu.getBuffer();
+			short dataLength = apdu.setIncomingAndReceive();
+			short length = byteToShort(buffer[ISO7816.OFFSET_P1]);
+			byte[] encryptedPoints = new byte[length];
+			Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, encryptedPoints, (short) 0, length);
+			
+			//decrypt points
+			byte[] decryptedText = decryptDataShop(encryptedPoints);
+			byte[] decyptedPoints = new byte[2];
+			Util.arrayCopy(decryptedText,(short) 6 , decyptedPoints, (short) 0, (short)2);
+			short update = byteArrayToShort(decyptedPoints);
+			
+			short points = 0;
+			//update points
+			if(idShop == 0){
+				colruytPoints = (short) (colruytPoints + update);
+				points = colruytPoints;
+			}else if(idShop == 1){
+				delhaizePoints = (short) (delhaizePoints + update);
+				points = delhaizePoints;
+			}
+			else if(idShop == 2){
+				alienWarePoints = (short) (alienWarePoints + update);
+				points = alienWarePoints;
+			}
+			else if(idShop == 3){
+				razorPoints = (short) (razorPoints + update);
+				points = razorPoints;
+			}
+			
+			//return points
+			apdu.setOutgoing();
+			apdu.setOutgoingLength((short) 2);
+			apdu.sendBytesLong(shortToByte(update), (short) 0, (short) 2);
+		}
+		
+	}
+
+	private void encryptShopPoints(APDU apdu) {
+		apdu.setIncomingAndReceive();
+		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+		else{
+			
+			byte[] points = new byte[8];
+			if(idShop == 0){
+				byte[] colruytPointsByte = shortToByte(colruytPoints);
+				points[0] = colruytPointsByte[0];
+				points[1] = colruytPointsByte[1];
+			}else if(idShop == 1){
+				byte[] delhaizePointsByte = shortToByte(delhaizePoints);
+				points[0] = delhaizePointsByte[0];
+				points[1] = delhaizePointsByte[1];
+			}else if(idShop == 2){
+				byte[] alienPointsByte = shortToByte(alienWarePoints);
+				points[0] = alienPointsByte[0];
+				points[1] = alienPointsByte[1];
+			}else if(idShop == 3){
+				byte[] razorPointsByte = shortToByte(razorPoints);
+				points[0] = razorPointsByte[0];
+				points[1] = razorPointsByte[1];
+			}
+			points[2] = 0;
+			points[3] = 0;
+			points[4] = 0;
+			points[5] = 0;
+			points[6] = 0;
+			points[7] = 0;
+			
+			//encrypt data
+			byte[] encryptedData = encryptDataShop(points);
+			
+			//send ecnrypted data back
+			apdu.setOutgoing();
+			apdu.setOutgoingLength((short) encryptedData.length);
+			apdu.sendBytesLong(encryptedData, (short) 0, (short) encryptedData.length);
+		}
+	}
+
+	private void decryptShopText(APDU apdu) {
+		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+		else{
+			//load text
+			byte[] buffer = apdu.getBuffer();
+			short dataLength = apdu.setIncomingAndReceive();
+			short length = byteToShort(buffer[ISO7816.OFFSET_P1]);
+			byte[] encryptedText = new byte[length];
+			Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, encryptedText, (short) 0, length);
+			
+			//decrypt text
+			byte[] data = new byte[length];
+			cipherWithShop.init(secretDesKeyWithShop,Cipher.MODE_DECRYPT);
+			cipherWithShop.doFinal(encryptedText, (short) 0 , (short) encryptedText.length, data, (short) 0); 
+			
+			//send back decrypted text
+			apdu.setOutgoing();
+			apdu.setOutgoingLength((short) data.length);
+			apdu.sendBytesLong(data, (short) 0, (short) data.length);
+		}
+		
+
+		
 	}
 
 	private void keyAgreementSHOP(APDU apdu) {
@@ -394,7 +513,16 @@ public class IdentityCard extends Applet {
 				pseudoniemColruyt = pseudoniem;
 				colruytPoints = 0;
 			}else if(idShop == (short)1){
-				//NOG TE SCHRIJVEN
+				pseudoniemDelhaize = pseudoniem;
+				delhaizePoints = 0;
+			}
+			else if(idShop == (short)2){
+				pseudoniemAlienWare = pseudoniem;
+				alienWarePoints = 0;
+			}
+			else if(idShop == (short)3){
+				pseudoniemRazor = pseudoniem;
+				razorPoints = 0;
 			}
 			byte[] response = new byte[]{(byte) 0xff};
 			apdu.setOutgoing();

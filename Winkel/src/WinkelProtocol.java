@@ -2,6 +2,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.math.BigInteger;
 import java.net.Socket;
 import java.security.KeyFactory;
 import java.security.MessageDigest;
@@ -107,7 +108,6 @@ public class WinkelProtocol {
 			short addjustPoints = (short) sc.nextInt();
 			
 			byte[] byteAddjust = shortToByte(addjustPoints);
-			
 			theOutput = encryptOutput(byteAddjust);
 		}
 
