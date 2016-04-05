@@ -29,6 +29,7 @@ public class WinkelMain {
 	private static ECPublicKey publicKeyLCP;
 	private static X509Certificate winkelCert;
 	private static Winkel winkel;
+	public static int winkelNummer;
 	private static final char [] KEYSTOREPASWOORD = "kiwikiwi".toCharArray();
 	
 	
@@ -53,17 +54,17 @@ public class WinkelMain {
 		// Inlezen van het winkelnummer
 		// Dit blijft gebeuren dat het winkelnummer een aanvaardbaar nummer is
 		// (nummer tussen 1-4).
-		int winkelnummer = Integer.parseInt(SCANNER.nextLine());
+		winkelNummer = Integer.parseInt(SCANNER.nextLine());
 		
-		while (winkelnummer < 0 || winkelnummer > 3) {
+		while (winkelNummer < 0 || winkelNummer > 3) {
 			System.err.println("Het ingegeven winkelnummer is niet correct");
-			winkelnummer = Integer.parseInt(SCANNER.nextLine());
+			winkelNummer = Integer.parseInt(SCANNER.nextLine());
 		}
 
 		// Een juist winkel object maken op basis van het ingelezen winkelnummer.
 		// Default wordt Alienware gemaakt.
 		
-		switch (winkelnummer) {
+		switch (winkelNummer) {
 		case 0:
 			winkel = new Winkel(COLRUYT_NAME);
 			break;
@@ -81,10 +82,10 @@ public class WinkelMain {
 			winkel = new Winkel(ALIENWARE_NAME);
 			break;
 		}
-		makeKeysAndCerts(winkelnummer);
+		makeKeysAndCerts(winkelNummer);
 		winkel.startGUI();
 		
-		int portNumber = 5000+winkelnummer;
+		int portNumber = 5000+winkelNummer;
 		
 		ServerSocket ss = new ServerSocket(portNumber);
 		System.out.println("RegisterSocket Ready");

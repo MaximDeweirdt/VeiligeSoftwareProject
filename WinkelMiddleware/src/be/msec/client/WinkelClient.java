@@ -193,11 +193,13 @@ public class WinkelClient {
 			//nu beschikken ze alletwee over elkaars public key en zullen ze dus ne symmetric key kunnen vormen elk
 			keyAgreementWithShop(a,r,c);
 			
-			requestTransActionAmount(a,r,c);
-			//WRITE NAAR DE SERVER HET AANTAL TRANSACTIES OP DE KAART GEENCRYPTEERD
 			
 			boolean trans = true; //trans hangt af of de server denieded of accepted terug stuurt na het verzende van het aantal transacties
 			while(trans == false){
+				
+				winkelOut.writeObject(requestTransActionAmount(a,r,c));
+				input = (byte[])winkelIn.readObject();
+				
 				byte[] encryptedPunten = requestShopPoints(a,r,c); //hier moet het aantal punten op de kaart komen, geencrypteerd
 				winkelOut.writeObject(encryptedPunten);
 				input = (byte[]) winkelIn.readObject(); //de wijziging in punten terug krijgen
@@ -205,8 +207,6 @@ public class WinkelClient {
 				
 				//dit herhalen tot als we allemaal content zijn dan een 0 van de winkel dan stoppen die handel
 				//da zou het moeten zijn denk'k
-				requestTransActionAmount(a,r,c);
-				//WRITE NAAR DE SERVER HET AANTAL TRANSACTIES OP DE KAART GEENCRYPTEERD
 				
 			}
 			byte[] transBuffer = requestTransActionBuffer(a,r,c);//is geencrypteerd met de key van de LCP en is klaar om anar de LCP verstuurd te worden
@@ -240,12 +240,13 @@ public class WinkelClient {
 	}
 
 
-	private static void requestTransActionAmount(CommandAPDU a, ResponseAPDU r, IConnection c) throws Exception {
+	private static byte[] requestTransActionAmount(CommandAPDU a, ResponseAPDU r, IConnection c) throws Exception {
 		a = new CommandAPDU(IDENTITY_CARD_CLA, REQ_TRANS_AMOUNT ,0x00, 0x00,new byte[]{0x00});
 		r = c.transmit(a);
 		System.out.println("status aantal transacties oprvagen = " + r);
 		byte[] transActieAmount = r.getData();
 		System.out.println("aantal encrypted transacties = " + new BigInteger(1,transActieAmount).toString(16));
+		return transActieAmount;
 	}
 
 

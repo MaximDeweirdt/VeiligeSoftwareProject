@@ -17,6 +17,8 @@ import org.bouncycastle.jce.interfaces.ECPublicKey;
 
 import gui.LCPGui;
 import socketListeners.RegisterSocketListenerThread;
+import socketListeners.RevalidateSocketListenerThread;
+import socketListeners.UpdateSocketListenerThread;
 import socketListeners.VerificationSocketListenerThread;
 
 public class MainLCP {
@@ -26,7 +28,9 @@ public class MainLCP {
 	private static X509Certificate cardCert;
 	private static X509Certificate colruytCert;
 	private static X509Certificate delhaizeCert;
-	private static Map<X509Certificate,Boolean> certList = new HashMap<X509Certificate, Boolean>();
+	private static Map<X509Certificate,CertificateData> certList = new HashMap<X509Certificate, CertificateData>();
+	
+	
 	
 	
 	public static void main(String[] args) throws Exception {
@@ -37,12 +41,13 @@ public class MainLCP {
 		
 		int registerPort = 4443; // poort om een virtuele klantenkaart aan te vragen
 		int verificationPort = 4444; //poort om certificaten te verifieren
-//		int updateLogPort = 4445; //poort om log up te daten? voor later te kunnen controleren
-//		int hervalidatiePort = 4446; // poort om log te controleren
+		int updateLogPort = 4445; //poort om log up te daten? voor later te kunnen controleren
+		int hervalidatiePort = 4446; // poort om log te controleren
 		
 		new RegisterSocketListenerThread(registerPort).start();
 		new VerificationSocketListenerThread(verificationPort).start();
-		
+		new UpdateSocketListenerThread(updateLogPort).start();
+		new RevalidateSocketListenerThread(updateLogPort).start();
 	}
 
 
@@ -125,12 +130,12 @@ public class MainLCP {
 		MainLCP.cardCert = cardCert;
 	}
 
-	public static Map<X509Certificate, Boolean> getCertList() {
+	public static Map<X509Certificate, CertificateData> getCertList() {
 		return certList;
 	}
 
 	public static void addCertToList(X509Certificate virtualCardCert) {
-		MainLCP.certList.put(virtualCardCert, true);
+		MainLCP.certList.put(virtualCardCert, new CertificateData());
 	}
 
 

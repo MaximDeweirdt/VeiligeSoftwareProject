@@ -46,7 +46,7 @@ public class VerificationProtocol {
 			InputStream in = new ByteArrayInputStream(input);
 			X509Certificate cert = (X509Certificate) certFactory.generateCertificate(in);
 			if(MainLCP.getCertList().containsKey(cert)){
-				 valid = MainLCP.getCertList().get(cert);
+				 valid = MainLCP.getCertList().get(cert).isValid();
 			}
 			if(valid){
 				try {
@@ -77,7 +77,7 @@ public class VerificationProtocol {
 			InputStream in = new ByteArrayInputStream(input);
 			X509Certificate cert = (X509Certificate) certFactory.generateCertificate(in);
 			if(MainLCP.getCertList().containsKey(cert)){
-				 valid = MainLCP.getCertList().get(cert);
+				 valid = MainLCP.getCertList().get(cert).isValid();
 			}
 			if(valid){
 				try {

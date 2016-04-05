@@ -4,25 +4,23 @@ import java.io.IOException;
 import java.net.ServerSocket;
 
 import socketThreads.LCPVerificationThread;
-import socketThreads.RegisterThread;
+import socketThreads.UpdateThread;
 
-public class VerificationSocketListenerThread extends Thread {
+public class UpdateSocketListenerThread  extends Thread {
 
 	private ServerSocket ss;
 	
-	public VerificationSocketListenerThread(int registerPort) throws IOException {
+	public UpdateSocketListenerThread(int registerPort) throws IOException {
 		
-		super("verificationSocketListenerThread");
+		super("updateSocketListenerThread");
 		ss = new ServerSocket(registerPort);
-		
-		
 	    
 	}
 	public void run() {
-		System.out.println("verification Socket Ready...");
+		System.out.println("Update Socket Ready...");
 		while (true) {
 			try {
-				new LCPVerificationThread(ss.accept()).start();
+				new UpdateThread(ss.accept()).start();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -30,4 +28,5 @@ public class VerificationSocketListenerThread extends Thread {
 
 		}
 	}
+
 }

@@ -1,4 +1,5 @@
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -23,12 +24,16 @@ import org.bouncycastle.jce.interfaces.ECPublicKey;
 public class WinkelProtocol {
 	private Cipher cipher;
 	private WinkelThread wt;
-	private SecretKey secretKey;
+	private SecretKey secretKey; //used for cipher
+	private SecretKey secretKeyLCP;
+	private SecretKey secretKeyCard;
+	private X509Certificate cardCert;
 	Scanner sc = new Scanner(System.in);
 	public static final int TESTCONNECTIONSTATE = -1;
 	public static final int GIVECERTIFICATESTATE = 0;
 	public static final int CHECKCERTIFICATESTATE = 1;
-	public static final int CHANGEPOINTSSTATE = 2;
+	public static final int CHECKTRANSACTIONSTATE = 2;
+	public static final int CHANGEPOINTSSTATE = 3;
 
 	int state = GIVECERTIFICATESTATE;
 
@@ -89,15 +94,33 @@ public class WinkelProtocol {
 					theOutput = encryptOutput(denied);
 				}
 				else{
-					//legit => winkelCertificaat terugsturen
+					this.cardCert = cardCert;
 					makeSecretKeyWithCard(cardCert);
 					byte[] accepted = { 'a', 'c', 'c', 'e', 'p', 't', 'e', 'd' };
 					theOutput = encryptOutput(accepted);
-					state = CHANGEPOINTSSTATE;
+					state = CHECKTRANSACTIONSTATE;
 				}
 			}
 			verifyOut.writeObject("close connection");
 			verifyCertSocket.close();
+			
+		} else if (state == CHECKTRANSACTIONSTATE) {
+			byte[] input = (byte[]) theInput;
+			byte[] decryptedInput = decryptInput(input);
+			short nTrans = byteArrayToShort(decryptedInput);
+			System.out.println("je hebt " + nTrans + " transacties ondernomen ");
+			if(nTrans<20){
+				System.out.println("Je mag nog " + (20-nTrans) + " transacties uitvoeren voor contact op te nemen met de LCP");
+				state = CHANGEPOINTSSTATE;
+				byte[] accepted = { 'a', 'c', 'c', 'e', 'p', 't', 'e', 'd' };
+				theOutput = encryptOutput(accepted);
+			}
+			else{
+				System.out.println("Neem contact op met de LCP voordat er nieuwe transacties kunnen uitgevoerd worden");
+				state = CHECKTRANSACTIONSTATE;
+				byte[] denied = { 'd', 'e', 'n', 'i', 'e', 'd', 'e', 'd' };
+				theOutput = encryptOutput(denied);
+			}
 			
 		} else if (state == CHANGEPOINTSSTATE) {
 			byte[] input = (byte[]) theInput;
@@ -107,13 +130,68 @@ public class WinkelProtocol {
 			
 			short addjustPoints = (short) sc.nextInt();
 			
+			secretKey = secretKeyLCP;
+			SendTransactionToLCP(nPoints, addjustPoints, cardCert, WinkelMain.winkelNummer);
+			
+			secretKey = secretKeyCard;
+			
 			byte[] byteAddjust = shortToByte(addjustPoints);
 			theOutput = encryptOutput(byteAddjust);
+			state = CHECKTRANSACTIONSTATE;
 		}
 
 		return theOutput;
 	}
 	
+	private void SendTransactionToLCP(short nPoints, short addjustPoints, X509Certificate cardCert, int winkelNummer) throws Exception {
+		
+		Socket updateTransSocket = new Socket("localhost", 4445);
+		ObjectOutputStream updateOut = new ObjectOutputStream(updateTransSocket.getOutputStream());
+		ObjectInputStream updateIn = new ObjectInputStream(updateTransSocket.getInputStream());
+		
+		updateOut.writeObject(WinkelMain.getWinkelCert().getEncoded());
+		
+		
+		byte[] input = (byte[]) updateIn.readObject();
+		byte[] decryptedInput = decryptInput(input);
+		
+		if(decryptedInput[0] == 'd'){
+			System.err.println("winkelCertificaat niet aanvaard");
+		}
+		else if(decryptedInput[0] == 'a'){
+			
+			updateOut.writeObject(encryptOutput(cardCert.getEncoded()));
+			
+			input = (byte[]) updateIn.readObject();
+			decryptedInput = decryptInput(input);
+
+			if(decryptedInput[0] == 'd'){
+				System.err.println("LCP did not find this Card");
+			}
+			else{
+				
+				byte[] shopIdByte = shortToByte((short) WinkelMain.winkelNummer);
+				byte[] previousPointsByte = shortToByte(nPoints);
+				byte[] updateByte = shortToByte(addjustPoints);
+				
+				byte[] transaction = new byte[8];
+				transaction[0] = shopIdByte[0]; 
+				transaction[1] = shopIdByte[1]; 
+				transaction[2] = previousPointsByte[0]; 
+				transaction[3] = previousPointsByte[1]; 			
+				transaction[4] = updateByte[0];
+				transaction[5] = updateByte[1];
+				transaction[6] = 0;
+				transaction[7] = 0;
+				
+				updateOut.writeObject(encryptOutput(transaction));
+				updateIn.readObject();
+			}
+		}
+		updateOut.writeObject("close connection");
+		updateTransSocket.close();
+	}
+
 	private byte[] trimArray(byte[] decryptedInput) {
 		int i = 0;
 		while(decryptedInput[i] == 0){
@@ -141,7 +219,8 @@ public class WinkelProtocol {
 		
 		SecretKeyFactory skf = SecretKeyFactory.getInstance("DES");
 		DESKeySpec desSpec = new DESKeySpec(hashKey);
-		secretKey = skf.generateSecret(desSpec);
+		secretKeyCard = skf.generateSecret(desSpec);
+		secretKey = secretKeyCard;
 		
 	}
 	
@@ -162,7 +241,8 @@ public class WinkelProtocol {
 		
 		SecretKeyFactory skf = SecretKeyFactory.getInstance("DES");
 		DESKeySpec desSpec = new DESKeySpec(hashKey);
-		secretKey = skf.generateSecret(desSpec);
+		secretKeyLCP = skf.generateSecret(desSpec);
+		secretKey = secretKeyLCP;
 		
 	}
 
