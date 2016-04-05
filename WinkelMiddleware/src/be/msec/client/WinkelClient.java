@@ -64,6 +64,8 @@ public class WinkelClient {
 	private static final byte DECRYPT_SHOP_TEXT_INS = 0x43;
 	private static final byte REQ_SHOP_POINTS_INS = 0x44;
 	private static final byte UPD_POINTS_INS = 0x45;
+	private static final byte REQ_TRANS_AMOUNT = 0x46;
+	private static final byte REQ_TRANS_BUFFER = 0x47;
 	
 	
 	
@@ -191,8 +193,11 @@ public class WinkelClient {
 			//nu beschikken ze alletwee over elkaars public key en zullen ze dus ne symmetric key kunnen vormen elk
 			keyAgreementWithShop(a,r,c);
 			
-			//input = shortToByte((short)5);
-			while(byteArrayToShort(input)!=(short)0){
+			requestTransActionAmount(a,r,c);
+			//WRITE NAAR DE SERVER HET AANTAL TRANSACTIES OP DE KAART GEENCRYPTEERD
+			
+			boolean trans = true; //trans hangt af of de server denieded of accepted terug stuurt na het verzende van het aantal transacties
+			while(trans == false){
 				byte[] encryptedPunten = requestShopPoints(a,r,c); //hier moet het aantal punten op de kaart komen, geencrypteerd
 				winkelOut.writeObject(encryptedPunten);
 				input = (byte[]) winkelIn.readObject(); //de wijziging in punten terug krijgen
@@ -200,7 +205,13 @@ public class WinkelClient {
 				
 				//dit herhalen tot als we allemaal content zijn dan een 0 van de winkel dan stoppen die handel
 				//da zou het moeten zijn denk'k
+				requestTransActionAmount(a,r,c);
+				//WRITE NAAR DE SERVER HET AANTAL TRANSACTIES OP DE KAART GEENCRYPTEERD
+				
 			}
+			byte[] transBuffer = requestTransActionBuffer(a,r,c);//is geencrypteerd met de key van de LCP en is klaar om anar de LCP verstuurd te worden
+			//deze methode moet zeker best in client????
+			
 			
 		} catch (Exception e) {
 			throw e;
@@ -218,6 +229,25 @@ public class WinkelClient {
 
 	}
 	
+
+	private static byte[] requestTransActionBuffer(CommandAPDU a, ResponseAPDU r, IConnection c) throws Exception {
+		a = new CommandAPDU(IDENTITY_CARD_CLA, REQ_TRANS_BUFFER ,0x00, 0x00,new byte[]{0x00});
+		r = c.transmit(a);
+		System.out.println("status transaction buffer = " + r);
+		byte[] transactionBuffer = r.getData();
+		System.out.println("transaction buffer geencrypteerd = " + new BigInteger(1,transactionBuffer).toString(16));
+		return transactionBuffer;		
+	}
+
+
+	private static void requestTransActionAmount(CommandAPDU a, ResponseAPDU r, IConnection c) throws Exception {
+		a = new CommandAPDU(IDENTITY_CARD_CLA, REQ_TRANS_AMOUNT ,0x00, 0x00,new byte[]{0x00});
+		r = c.transmit(a);
+		System.out.println("status aantal transacties oprvagen = " + r);
+		byte[] transActieAmount = r.getData();
+		System.out.println("aantal encrypted transacties = " + new BigInteger(1,transActieAmount).toString(16));
+	}
+
 
 	private static void updatePointsShop(CommandAPDU a, ResponseAPDU r, IConnection c, byte[] encryptedChangedPoints) throws Exception {
 		a = new CommandAPDU(IDENTITY_CARD_CLA, UPD_POINTS_INS ,(byte) (encryptedChangedPoints.length&0xff), 0x00,encryptedChangedPoints);

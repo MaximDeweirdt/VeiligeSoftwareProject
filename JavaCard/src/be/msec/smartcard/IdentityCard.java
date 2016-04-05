@@ -47,6 +47,8 @@ public class IdentityCard extends Applet {
 	private static final byte DECRYPT_SHOP_TEXT_INS = 0x43;
 	private static final byte REQ_SHOP_POINTS_INS = 0x44;
 	private static final byte UPD_POINTS_INS = 0x45;
+	private static final byte REQ_TRANS_AMOUNT = 0x46;
+	private static final byte REQ_TRANS_BUFFER = 0x47;
 	
 	private final static byte PIN_TRY_LIMIT = (byte) 0x03;
 	private final static byte PIN_SIZE = (byte) 0x04;
@@ -90,6 +92,9 @@ public class IdentityCard extends Applet {
 	private byte[] QparamDelhaize = new byte[52];
 	private byte[] QparamAlienWare = new byte[52];
 	private byte[] QparamRazor = new byte[52];
+	
+	private byte[] transactions = new byte[120];//elke short neemt 2 bytes in
+	short transactionCounter = 0;
 	
 	public static byte[] privateKeyCard = new byte[] { (byte) 0x30, (byte) 0x7b, (byte) 0x02, (byte) 0x01, (byte) 0x00,
 			(byte) 0x30, (byte) 0x13, (byte) 0x06, (byte) 0x07, (byte) 0x2a, (byte) 0x86, (byte) 0x48, (byte) 0xce,
@@ -200,7 +205,13 @@ public class IdentityCard extends Applet {
 			encryptShopPoints(apdu);
 			break;
 		case UPD_POINTS_INS:
-			updatePoints(apdu);
+			updatePointsTransaction(apdu);
+			break;
+		case REQ_TRANS_AMOUNT:
+			sendTransAmount(apdu);
+			break;
+		case REQ_TRANS_BUFFER:
+			requestTransBuffer(apdu);
 			break;
 		// If no matching instructions are found it is indicated in the status
 		// word of the response.
@@ -213,7 +224,55 @@ public class IdentityCard extends Applet {
 		}
 	}
 
-	private void updatePoints(APDU apdu) {
+	private void requestTransBuffer(APDU apdu) {
+		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+		else{
+			apdu.setIncomingAndReceive();
+			
+			//encypt buffer
+			byte[] encryptedBuffer = encryptDataLCP(transactions);
+			
+			//empty buffer
+			for(int i = 0; i<transactions.length; i++){
+				transactions[i] = 0;
+			}
+			
+			//return encrypted trans amount
+			apdu.setOutgoing();
+			apdu.setOutgoingLength((short) encryptedBuffer.length);
+			apdu.sendBytesLong(encryptedBuffer, (short) 0, (short) encryptedBuffer.length);
+			
+		}
+		
+	}
+
+	private void sendTransAmount(APDU apdu) {
+		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+		else{
+			apdu.setIncomingAndReceive();
+			
+			byte[] transAmountByte = shortToByte(transactionCounter);
+			byte[] transactionAmountByte = new byte[8];
+			transactionAmountByte[0] = transAmountByte[0];
+			transactionAmountByte[1] = transAmountByte[1];
+			transactionAmountByte[2] = 0;
+			transactionAmountByte[3] = 0;
+			transactionAmountByte[4] = 0;
+			transactionAmountByte[5] = 0;
+			transactionAmountByte[6] = 0;
+			transactionAmountByte[7] = 0;
+			
+			byte[] encryptedTransAmount = encryptDataShop(transactionAmountByte);
+			
+			//return encrypted trans amount
+			apdu.setOutgoing();
+			apdu.setOutgoingLength((short) 8);
+			apdu.sendBytesLong(encryptedTransAmount, (short) 0, (short) 8);
+		}
+		
+	}
+
+	private void updatePointsTransaction(APDU apdu) {
 		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
 		else{
 			//load text
@@ -225,9 +284,9 @@ public class IdentityCard extends Applet {
 			
 			//decrypt points
 			byte[] decryptedText = decryptDataShop(encryptedPoints);
-			byte[] decyptedPoints = new byte[2];
-			Util.arrayCopy(decryptedText,(short) 6 , decyptedPoints, (short) 0, (short)2);
-			short update = byteArrayToShort(decyptedPoints);
+			byte[] updateByte = new byte[2];
+			Util.arrayCopy(decryptedText,(short) 6 , updateByte, (short) 0, (short)2);
+			short update = byteArrayToShort(updateByte);
 			
 			short points = 0;
 			//update points
@@ -246,6 +305,19 @@ public class IdentityCard extends Applet {
 				razorPoints = (short) (razorPoints + update);
 				points = razorPoints;
 			}
+			
+			byte[] shopIdByte = shortToByte(idShop);
+			short previousPoints = (short) (points - update);
+			byte[] previousPointsByte = shortToByte(previousPoints);
+			
+			//set transaction in transaction buffer
+			transactions[transactionCounter*6] 		= shopIdByte[0]; 
+			transactions[transactionCounter*6 + 1]	= shopIdByte[1]; 
+			transactions[transactionCounter*6 + 2]	= previousPointsByte[0]; 
+			transactions[transactionCounter*6 + 3]	= previousPointsByte[1]; 			
+			transactions[transactionCounter*6 + 4] 	= updateByte[0];
+			transactions[transactionCounter*6 + 5] 	= updateByte[1];
+			transactionCounter = (short) (transactionCounter + 1);
 			
 			//return points
 			apdu.setOutgoing();
