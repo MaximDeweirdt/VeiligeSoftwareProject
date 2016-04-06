@@ -47,7 +47,7 @@ public class MainLCP {
 		new RegisterSocketListenerThread(registerPort).start();
 		new VerificationSocketListenerThread(verificationPort).start();
 		new UpdateSocketListenerThread(updateLogPort).start();
-		new RevalidateSocketListenerThread(updateLogPort).start();
+		new RevalidateSocketListenerThread(hervalidatiePort).start();
 	}
 
 
