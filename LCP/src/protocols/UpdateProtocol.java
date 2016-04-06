@@ -8,6 +8,7 @@ import java.security.Security;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
@@ -74,8 +75,13 @@ public class UpdateProtocol {
 		} else if (state == FINDCERTSTATE) {
 			byte[] encryptedInput = (byte[]) theInput;
 			byte[] input = decryptInput(encryptedInput);
+			int i = 0;
+			while(input[i]==0){
+				i++;
+			}
+			byte[] certByte = Arrays.copyOfRange(input, i, input.length);
 			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-			InputStream in = new ByteArrayInputStream(input);
+			InputStream in = new ByteArrayInputStream(certByte);
 			X509Certificate cert = (X509Certificate) certFactory.generateCertificate(in);
 			if(MainLCP.getCertList().containsKey(cert)){
 				certData = MainLCP.getCertList().get(cert);
