@@ -58,4 +58,12 @@ public class CertificateData {
 		}
 		return same;
 	}
+
+
+	public void setRenewed() {
+		transactionBytesList.add(currentTransactions);
+		currentTransactions = new byte[160];
+		currentTransactionNumber = 0;
+		
+	}
 }

@@ -104,6 +104,7 @@ public class RevalidateProtocol {
 			boolean rightData = certData.checkLog(input);
 			
 			if(rightData){
+				certData.setRenewed();
 				byte[] accepted = { 'a', 'c', 'c', 'e', 'p', 't', 'e', 'd' };
 				theOutput = encryptOutput(accepted);
 				state = FINDCERTSTATE;

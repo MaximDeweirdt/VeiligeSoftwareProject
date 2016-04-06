@@ -157,6 +157,12 @@ public class MainLCP {
 	public static void setDelhaizeCert(X509Certificate delhaizeCert) {
 		MainLCP.delhaizeCert = delhaizeCert;
 	}
+	
+	public static void invalidateCert(X509Certificate cert){
+		if(MainLCP.certList.containsKey(cert)){
+			MainLCP.certList.get(cert).setValid(false);
+		}
+	}
 }
 		
 
