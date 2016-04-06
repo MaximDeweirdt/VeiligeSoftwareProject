@@ -11,7 +11,7 @@ public class CertificateData {
 	public CertificateData(){
 		setTransactionBytesList(new ArrayList<>());
 		setValid(true);
-		currentTransactions = new byte[120];
+		currentTransactions = new byte[160];
 		currentTransactionNumber = 0;
 	}
 
