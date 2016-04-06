@@ -57,6 +57,8 @@ public class ClientMain {
 	private static final byte GET_PART2_CERTIFICATE = 0x08;
 	private static final byte CHECK_CERT_INS = 0x09;
 	private static final byte ENCRYPT_SHOP_ID_INS = 0x11;
+	private static final byte REQ_PSEUDONIEM_SHOP = 0x12;
+	private static final byte REQ_TRANS_BUFFER_SHOP = 0x13;
 	
 	private final static short SW_VERIFICATION_FAILED = 0x6300;
 	private final static short SW_PIN_VERIFICATION_REQUIRED = 0x6301;
@@ -100,6 +102,9 @@ public class ClientMain {
 	
 	public static final String HOSTNAME = "localhost";
 	public static final int PORT_NUMBER = 4443;
+	public static final int EMPTY_BUFFER_PORT_NUMBER = 4446;
+	
+	
 	
 	public static void main(String[] args) throws Exception {
 		
@@ -323,7 +328,7 @@ public class ClientMain {
 
 
 	}
-	
+
 	private static boolean checkCorrectCertificate(CommandAPDU a, ResponseAPDU r, IConnection c, byte[] input) throws Exception {
 		a = new CommandAPDU(IDENTITY_CARD_CLA, CHECK_CERT_INS, (byte) (input.length&0xff), 0x00,input);
 		r = c.transmit(a);
@@ -371,7 +376,7 @@ public class ClientMain {
 		return symmetricKey;
 	}
 	
-	private static byte[] requestCertificate(CommandAPDU a, ResponseAPDU r, IConnection c) throws Exception{
+	public static byte[] requestCertificate(CommandAPDU a, ResponseAPDU r, IConnection c) throws Exception{
 		ByteBuffer bb = ByteBuffer.allocate(263);
 		byte[] certificate = new byte[263];
 		a = new CommandAPDU(IDENTITY_CARD_CLA, GET_PART1_CERTIFICATE , 0x00 , 0x00,new byte[]{(byte)0xff});
@@ -416,5 +421,25 @@ public class ClientMain {
 		shortByte[0] = (byte) ((s >> 8) & 0xff);
 		shortByte[1] = (byte) (s & 0xff);
 		return shortByte;
+	}
+
+	public static byte[] requestPseudoniem(CommandAPDU a, ResponseAPDU r, IConnection c, int winkelId) throws Exception {
+		byte[] winkelIdByte = shortToByte((short)winkelId);
+		a = new CommandAPDU(IDENTITY_CARD_CLA, REQ_PSEUDONIEM_SHOP, (byte) (winkelIdByte.length&0xff), 0x00,winkelIdByte);
+		r = c.transmit(a);
+		System.out.println("request pseudoniem status " + r);
+		byte[] pseudoniem = r.getData();
+		System.out.println("pseudoniem van winkel " + winkelId +" = " + new BigInteger(1,pseudoniem).toString(16));
+		return pseudoniem;
+	}
+
+	public static byte[] requestTransactionBuffer(CommandAPDU a, ResponseAPDU r, IConnection c, int winkelId) throws Exception {
+		byte[] winkelIdByte = shortToByte((short)winkelId);
+		a = new CommandAPDU(IDENTITY_CARD_CLA, REQ_TRANS_BUFFER_SHOP, (byte) (winkelIdByte.length&0xff), 0x00,winkelIdByte);
+		r = c.transmit(a);
+		byte[] transBuffer = r.getData();
+		System.out.println("request transaction buffer status " + r);
+		System.out.println("transaction buffer van winkel " + winkelId +" = " + new BigInteger(1,transBuffer).toString(16));
+		return transBuffer;
 	}
 }

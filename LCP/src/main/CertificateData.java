@@ -11,7 +11,7 @@ public class CertificateData {
 	public CertificateData(){
 		setTransactionBytesList(new ArrayList<>());
 		setValid(true);
-		currentTransactions = new byte[120];
+		currentTransactions = new byte[160];
 		currentTransactionNumber = 0;
 	}
 
@@ -52,7 +52,7 @@ public class CertificateData {
 	public boolean checkLog(byte[] input){
 		int i = 0;
 		boolean same = true;
-		while(same){
+		while(same && i< 160){
 			if(currentTransactions[i] != input[i])same = false;
 			i++;
 		}

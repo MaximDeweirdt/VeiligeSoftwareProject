@@ -187,7 +187,7 @@ public class Client {
 
 	}
 
-	private void checkCorrectCertificate(byte[] input) throws Exception {
+	private boolean checkCorrectCertificate(byte[] input) throws Exception {
 		gui.addText("Het certificaat van de LCP wordt gecontroleerd.");
 		long time1= System.currentTimeMillis();
 		a = new CommandAPDU(IDENTITY_CARD_CLA, CHECK_CERT_INS, (byte) (input.length & 0xff), 0x00, input);
@@ -203,6 +203,7 @@ public class Client {
 			gui.addText("Certificaat werd geaccepteerd.\n");
 			correctCardCert = true;
 		}
+		return correctCardCert;
 	}
 
 	public void addStoreProcedure(short storeID) throws Exception {
@@ -254,6 +255,49 @@ public class Client {
 		out.writeObject("close connection");
 		c.close();
 		socket.close();
+	}
+
+	public void emptyBuffer() throws Exception {
+		System.out.println("KEY AGREEMENT");
+		byte[] secretKey = ClientMain.keyAgreementLCPAndCard(a, r, c);//keyagreement with the LCP, return the secret key
+		Socket socketBuffer = new Socket(ClientMain.HOSTNAME, ClientMain.EMPTY_BUFFER_PORT_NUMBER);
+		ObjectOutputStream outBuffer = new ObjectOutputStream(socketBuffer.getOutputStream());
+		ObjectInputStream inBuffer = new ObjectInputStream(socketBuffer.getInputStream());
+				
+		byte[] cardCertificate = ClientMain.requestCertificate(a, r, c);
+		
+		outBuffer.writeObject(cardCertificate);//card certificaat verzonden naar de LCP
+		byte[] response = (byte[]) inBuffer.readObject();//response van de LCP of dit kaart certificaat legit is (accepted of denied)
+		//------START CHECKING RESPONSE VAN DE KAART
+		checkCorrectCertificate(response);
+		//------EINDE CHECKING
+		
+		boolean correctPseudoniem = true;
+		boolean correctBuffer = true;
+		boolean registered = true;
+		for(int winkelId=0;winkelId<4;winkelId++){
+			registered = true;
+			byte[] encryptedPseudoniem = ClientMain.requestPseudoniem(a,r,c,winkelId);
+			if(encryptedPseudoniem.length == 0){//client is niet geregistreerd in deze winkel
+				registered = false;
+			}
+			else{
+				outBuffer.writeObject(encryptedPseudoniem);
+				response = (byte[]) inBuffer.readObject();
+				correctPseudoniem = checkCorrectCertificate(response);//CHECKT OF HET PSEUDONIEM CORRECT IS OF NIET
+			}
+			if(correctPseudoniem == true && registered == true){
+				byte[] transactionBuffer = ClientMain.requestTransactionBuffer(a,r,c,winkelId);
+				outBuffer.writeObject(transactionBuffer);
+				response = (byte[]) inBuffer.readObject();//de LCP checkt of de transcaties overeenkomen, zoniet geeft hij denied terug
+				correctBuffer = checkCorrectCertificate(response);	
+				if(correctBuffer == false) System.err.println("foute overeenkomst in de buffer van winkel " + winkelId);//kijkt of de response denied was of niet van de LCP		
+			}else{
+				System.err.println("fout pseudoniem voor winkel of niet geregistreerd " + winkelId);
+			}
+		}
+		
+		System.out.println(new String(response));
 	}
 
 }

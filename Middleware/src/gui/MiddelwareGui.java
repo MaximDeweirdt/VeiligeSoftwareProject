@@ -272,7 +272,14 @@ public class MiddelwareGui extends JFrame {
 
 				} else if (arg0.getSource() == sendLog) {
 					// TODO: send log to LCP
+					try {
+						client.emptyBuffer();
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 					setTextOfField("Sending log to LCP");
+					
 				} else {
 					buffer.append(((JButton) arg0.getSource()).getText());
 					jtf.setText(buffer.toString());

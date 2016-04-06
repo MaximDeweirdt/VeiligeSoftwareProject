@@ -39,6 +39,8 @@ public class IdentityCard extends Applet {
 	private static final byte GET_PART2_CERTIFICATE = 0x08;
 	private static final byte CHECK_CERT_INS = 0x09;
 	private static final byte ENCRYPT_SHOP_ID_INS = 0x11;
+	private static final byte REQ_PSEUDONIEM_SHOP = 0x12;
+	private static final byte REQ_TRANS_BUFFER_SHOP = 0x13;
 	
 	
 	private static final byte REQ_PSEUDONIEM_INS = 0x40;
@@ -94,7 +96,16 @@ public class IdentityCard extends Applet {
 	private byte[] QparamAlienWare = new byte[52];
 	private byte[] QparamRazor = new byte[52];
 	
-	private byte[] transactions = new byte[120];//elke short neemt 2 bytes in
+	private byte[] transactionsColruyt = new byte[160];//elke short neemt 2 bytes in
+	short transactionCounterColruyt = 0;
+	private byte[] transactionsDelhaize = new byte[160];//elke short neemt 2 bytes in
+	short transactionCounterDelhaize = 0;
+	private byte[] transactionsAlienware = new byte[160];//elke short neemt 2 bytes in
+	short transactionCounterAlienware = 0;
+	private byte[] transactionsRazor = new byte[160];//elke short neemt 2 bytes in
+	short transactionCounterRazor = 0;
+	
+	
 	short transactionCounter = 0;
 	
 	public static byte[] privateKeyCard = new byte[] { (byte) 0x30, (byte) 0x7b, (byte) 0x02, (byte) 0x01, (byte) 0x00,
@@ -217,6 +228,12 @@ public class IdentityCard extends Applet {
 		case CHECK_TRANS_AMOUNT_INS:
 			checkTransAmount(apdu);
 			break;
+		case REQ_PSEUDONIEM_SHOP:
+			sendPseudoniemShop(apdu);
+			break;
+		case REQ_TRANS_BUFFER_SHOP:
+			sendTransBufferShop(apdu);
+			break;
 		// If no matching instructions are found it is indicated in the status
 		// word of the response.
 		// This can be done by using this method. As an argument a short is
@@ -227,6 +244,85 @@ public class IdentityCard extends Applet {
 			ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
 			break;
 		}
+	}
+
+	private void sendTransBufferShop(APDU apdu) {
+		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+		else{
+			//load shopId
+			byte[] buffer = apdu.getBuffer();
+			short dataLength = apdu.setIncomingAndReceive();
+			short length = byteToShort(buffer[ISO7816.OFFSET_P1]);
+			byte[] shopIdByte = new byte[length];
+			Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, shopIdByte, (short) 0, length);
+			
+			short winkelId = byteArrayToShort(shopIdByte);
+			byte[] transBuffer = new byte[5];
+			if(winkelId == 0){
+				transBuffer = transactionsColruyt;
+			} else if(winkelId == 1){
+				transBuffer = transactionsDelhaize;
+			} else if(winkelId == 2){
+				transBuffer = transactionsAlienware;
+			}else if(winkelId == 3){
+				transBuffer = transactionsRazor;
+			}
+			
+			byte[]transBufferEncrypted = encryptDataLCP(transBuffer);
+			
+			//reset data
+			if(winkelId == 0){
+				transactionsColruyt = new byte[160];
+				transactionCounterColruyt = 0;
+			} else if(winkelId == 1){
+				transactionsDelhaize= new byte[160];
+				transactionCounterDelhaize = 0;
+			} else if(winkelId == 2){
+				transactionsAlienware= new byte[160];
+				transactionCounterAlienware = 0;
+			}else if(winkelId == 3){
+				transactionsRazor= new byte[160];
+				transactionCounterRazor = 0;
+			}
+			transactionCounter = 0;
+			
+			//send back pseudoniem
+			apdu.setOutgoing();
+			apdu.setOutgoingLength((short) transBufferEncrypted.length);
+			apdu.sendBytesLong(transBufferEncrypted, (short) 0, (short) transBufferEncrypted.length);
+		}
+		
+	}
+
+	private void sendPseudoniemShop(APDU apdu) {
+		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+		else{
+			//load shopId
+			byte[] buffer = apdu.getBuffer();
+			short dataLength = apdu.setIncomingAndReceive();
+			short length = byteToShort(buffer[ISO7816.OFFSET_P1]);
+			byte[] shopIdByte = new byte[length];
+			Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, shopIdByte, (short) 0, length);
+			
+			short winkelId = byteArrayToShort(shopIdByte);
+			byte[] pseudoniem = new byte[5];
+			if(winkelId == 0){
+				pseudoniem = pseudoniemColruyt;
+			} else if(winkelId == 1){
+				pseudoniem = pseudoniemDelhaize;
+			} else if(winkelId == 2){
+				pseudoniem = pseudoniemAlienWare;
+			}else if(winkelId == 3){
+				pseudoniem = pseudoniemRazor;
+			}
+			
+			byte[]pseudoniemEncrypted = encryptDataLCP(pseudoniem);
+			//send back pseudoniem
+			apdu.setOutgoing();
+			apdu.setOutgoingLength((short) pseudoniemEncrypted.length);
+			apdu.sendBytesLong(pseudoniemEncrypted, (short) 0, (short) pseudoniemEncrypted.length);
+		}
+		
 	}
 
 	private void checkTransAmount(APDU apdu) {
@@ -261,9 +357,9 @@ public class IdentityCard extends Applet {
 	private void requestTransBuffer(APDU apdu) {
 		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
 		else{
-			apdu.setIncomingAndReceive();
+			/*apdu.setIncomingAndReceive();
 			
-			//encypt buffer
+			//encrypt buffer
 			byte[] encryptedBuffer = encryptDataLCP(transactions);
 			
 			//empty buffer
@@ -273,7 +369,7 @@ public class IdentityCard extends Applet {
 			//return encrypted trans amount
 			apdu.setOutgoing();
 			apdu.setOutgoingLength((short) encryptedBuffer.length);
-			apdu.sendBytesLong(encryptedBuffer, (short) 0, (short) encryptedBuffer.length);
+			apdu.sendBytesLong(encryptedBuffer, (short) 0, (short) encryptedBuffer.length);*/
 			
 		}
 		
@@ -323,39 +419,101 @@ public class IdentityCard extends Applet {
 			
 			short points = 0;
 			//update points
+			byte[] shopIdByte = shortToByte(idShop);
+
+			
 			if(idShop == 0){
+				short previousPoints = (short) (colruytPoints);
+				byte[] previousPointsByte = shortToByte(previousPoints);
 				colruytPoints = (short) (colruytPoints + update);
 				points = colruytPoints;
+
+				short i1 = (short) (transactionCounterColruyt*8);
+				short i2 = (short) ((short) (transactionCounterColruyt*8) + 1);
+				short i3 = (short) ((short) (transactionCounterColruyt*8) + 2);
+				short i4 = (short) ((short) (transactionCounterColruyt*8) + 3);
+				short i5 = (short) ((short) (transactionCounterColruyt*8) + 4);
+				short i6 = (short) ((short) (transactionCounterColruyt*8) + 5);
+				short i7 = (short) ((short) (transactionCounterColruyt*8) + 6);
+				short i8 = (short) ((short) (transactionCounterColruyt*8) + 7);
+				transactionsColruyt[i1] = shopIdByte[0]; 
+				transactionsColruyt[i2]	= shopIdByte[1]; 
+				transactionsColruyt[i3]	= previousPointsByte[0]; 
+				transactionsColruyt[i4]	= previousPointsByte[1]; 			
+				transactionsColruyt[i5] = updateByte[0];
+				transactionsColruyt[i6] = updateByte[1];
+				transactionsColruyt[i7] = (byte) 0x00;
+				transactionsColruyt[i8] = (byte) 0x00;
+				transactionCounterColruyt = (short) (transactionCounterColruyt + 1);
 			}else if(idShop == 1){
+				short previousPoints = (short) (delhaizePoints);
+				byte[] previousPointsByte = shortToByte(previousPoints);
 				delhaizePoints = (short) (delhaizePoints + update);
 				points = delhaizePoints;
-			}
-			else if(idShop == 2){
+				short i1 = (short) (transactionCounterDelhaize*8);
+				short i2 = (short) ((short) (transactionCounterDelhaize*8) + 1);
+				short i3 = (short) ((short) (transactionCounterDelhaize*8) + 2);
+				short i4 = (short) ((short) (transactionCounterDelhaize*8) + 3);
+				short i5 = (short) ((short) (transactionCounterDelhaize*8) + 4);
+				short i6 = (short) ((short) (transactionCounterDelhaize*8) + 5);
+				short i7 = (short) ((short) (transactionCounterDelhaize*8) + 6);
+				short i8 = (short) ((short) (transactionCounterDelhaize*8) + 7);
+				transactionsDelhaize[i1] = shopIdByte[0]; 
+				transactionsDelhaize[i2]	= shopIdByte[1]; 
+				transactionsDelhaize[i3]	= previousPointsByte[0]; 
+				transactionsDelhaize[i4]	= previousPointsByte[1]; 			
+				transactionsDelhaize[i5] = updateByte[0];
+				transactionsDelhaize[i6] = updateByte[1];
+				transactionsDelhaize[i7] = (byte) 0x00;
+				transactionsDelhaize[i8] = (byte) 0x00;
+				transactionCounterDelhaize = (short) (transactionCounterDelhaize + 1);
+			}else if(idShop == 2){
+				short previousPoints = (short) (alienWarePoints);
+				byte[] previousPointsByte = shortToByte(previousPoints);
 				alienWarePoints = (short) (alienWarePoints + update);
 				points = alienWarePoints;
-			}
-			else if(idShop == 3){
+				short i1 = (short) (transactionCounterAlienware*8);
+				short i2 = (short) ((short) (transactionCounterAlienware*8) + 1);
+				short i3 = (short) ((short) (transactionCounterAlienware*8) + 2);
+				short i4 = (short) ((short) (transactionCounterAlienware*8) + 3);
+				short i5 = (short) ((short) (transactionCounterAlienware*8) + 4);
+				short i6 = (short) ((short) (transactionCounterAlienware*8) + 5);
+				short i7 = (short) ((short) (transactionCounterAlienware*8) + 6);
+				short i8 = (short) ((short) (transactionCounterAlienware*8) + 7);
+				transactionsAlienware[i1] = shopIdByte[0]; 
+				transactionsAlienware[i2]	= shopIdByte[1]; 
+				transactionsAlienware[i3]	= previousPointsByte[0]; 
+				transactionsAlienware[i4]	= previousPointsByte[1]; 			
+				transactionsAlienware[i5] = updateByte[0];
+				transactionsAlienware[i6] = updateByte[1];
+				transactionsAlienware[i7] = (byte) 0x00;
+				transactionsAlienware[i8] = (byte) 0x00;
+				transactionCounterAlienware = (short) (transactionCounterAlienware + 1);
+			}else if(idShop == 3){
+				short previousPoints = (short) (razorPoints);
+				byte[] previousPointsByte = shortToByte(previousPoints);
 				razorPoints = (short) (razorPoints + update);
 				points = razorPoints;
+				short i1 = (short) (transactionCounterRazor*8);
+				short i2 = (short) ((short) (transactionCounterRazor*8) + 1);
+				short i3 = (short) ((short) (transactionCounterRazor*8) + 2);
+				short i4 = (short) ((short) (transactionCounterRazor*8) + 3);
+				short i5 = (short) ((short) (transactionCounterRazor*8) + 4);
+				short i6 = (short) ((short) (transactionCounterRazor*8) + 5);
+				short i7 = (short) ((short) (transactionCounterRazor*8) + 6);
+				short i8 = (short) ((short) (transactionCounterRazor*8) + 7);
+				transactionsRazor[i1] = shopIdByte[0]; 
+				transactionsRazor[i2]	= shopIdByte[1]; 
+				transactionsRazor[i3]	= previousPointsByte[0]; 
+				transactionsRazor[i4]	= previousPointsByte[1]; 			
+				transactionsRazor[i5] = updateByte[0];
+				transactionsRazor[i6] = updateByte[1];
+				transactionsRazor[i7] = (byte) 0x00;
+				transactionsRazor[i8] = (byte) 0x00;
+				transactionCounterRazor = (short) (transactionCounterRazor + 1);
 			}
 			
-			byte[] shopIdByte = shortToByte(idShop);
-			short previousPoints = (short) (points - update);
-			byte[] previousPointsByte = shortToByte(previousPoints);
 			
-			//set transaction in transaction buffer
-			short i1 = (short) (transactionCounter*6);
-			short i2 = (short) ((short) (transactionCounter*6) + 1);
-			short i3 = (short) ((short) (transactionCounter*6) + 2);
-			short i4 = (short) ((short) (transactionCounter*6) + 3);
-			short i5 = (short) ((short) (transactionCounter*6) + 4);
-			short i6 = (short) ((short) (transactionCounter*6) + 5);
-			transactions[i1] 	= shopIdByte[0]; 
-			transactions[i2]	= shopIdByte[1]; 
-			transactions[i3]	= previousPointsByte[0]; 
-			transactions[i4]	= previousPointsByte[1]; 			
-			transactions[i5] 	= updateByte[0];
-			transactions[i6] 	= updateByte[1];
 			transactionCounter = (short) (transactionCounter + 1);
 			
 			//return points
