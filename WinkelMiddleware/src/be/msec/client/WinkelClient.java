@@ -194,17 +194,23 @@ public class WinkelClient {
 			keyAgreementWithShop(a,r,c);
 			
 			
-			boolean trans = true; //trans hangt af of de server denieded of accepted terug stuurt na het verzende van het aantal transacties
-			while(trans == false){
+			boolean transAllowed = true; //trans hangt af of de server denieded of accepted terug stuurt na het verzende van het aantal transacties
+			while(transAllowed){
 				
 				winkelOut.writeObject(requestTransActionAmount(a,r,c));
 				input = (byte[])winkelIn.readObject();
-				
-				byte[] encryptedPunten = requestShopPoints(a,r,c); //hier moet het aantal punten op de kaart komen, geencrypteerd
-				winkelOut.writeObject(encryptedPunten);
-				input = (byte[]) winkelIn.readObject(); //de wijziging in punten terug krijgen
-				updatePointsShop(a,r,c,input);
-				
+				transAllowed= true; //hier moet de kaart dus vertalen of de server accepted of denied terug gestuurd heeft
+				//en zeggen of transactie nog mag of niet
+				//accepted teruggekregen =>true
+				if(transAllowed){
+					byte[] encryptedPunten = requestShopPoints(a,r,c); //hier moet het aantal punten op de kaart komen, geencrypteerd
+					winkelOut.writeObject(encryptedPunten);
+					input = (byte[]) winkelIn.readObject(); //de wijziging in punten terug krijgen
+					updatePointsShop(a,r,c,input);
+				}
+				else{
+					System.out.println("maximum aantal transacties bereikt");
+				}
 				//dit herhalen tot als we allemaal content zijn dan een 0 van de winkel dan stoppen die handel
 				//da zou het moeten zijn denk'k
 				
