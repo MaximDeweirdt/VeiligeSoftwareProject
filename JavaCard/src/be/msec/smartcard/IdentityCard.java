@@ -49,6 +49,7 @@ public class IdentityCard extends Applet {
 	private static final byte UPD_POINTS_INS = 0x45;
 	private static final byte REQ_TRANS_AMOUNT = 0x46;
 	private static final byte REQ_TRANS_BUFFER = 0x47;
+	private static final byte CHECK_TRANS_AMOUNT_INS = 0x48;
 	
 	private final static byte PIN_TRY_LIMIT = (byte) 0x03;
 	private final static byte PIN_SIZE = (byte) 0x04;
@@ -213,6 +214,9 @@ public class IdentityCard extends Applet {
 		case REQ_TRANS_BUFFER:
 			requestTransBuffer(apdu);
 			break;
+		case CHECK_TRANS_AMOUNT_INS:
+			checkTransAmount(apdu);
+			break;
 		// If no matching instructions are found it is indicated in the status
 		// word of the response.
 		// This can be done by using this method. As an argument a short is
@@ -221,7 +225,37 @@ public class IdentityCard extends Applet {
 		// 'ISO7816' class.
 		default:
 			ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
+			break;
 		}
+	}
+
+	private void checkTransAmount(APDU apdu) {
+		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+		else{
+			//load text
+			byte[] buffer = apdu.getBuffer();
+			short dataLength = apdu.setIncomingAndReceive();
+			short length = byteToShort(buffer[ISO7816.OFFSET_P1]);
+			byte[] encryptedData = new byte[length];
+			Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, encryptedData, (short) 0, length);
+		
+			//encrypt text
+			byte[] data = decryptDataShop(encryptedData);
+			
+			//check accepted or denied
+			byte[] response = new byte[1];
+			if(data[0]=='a'){
+				response[0] = (byte) 1;
+			}else{
+				response[0] = (byte) 0;
+			}
+			
+			//send back response
+			apdu.setOutgoing();
+			apdu.setOutgoingLength((short) response.length);
+			apdu.sendBytesLong(response, (short) 0, (short) response.length);
+		}
+		
 	}
 
 	private void requestTransBuffer(APDU apdu) {
@@ -233,9 +267,8 @@ public class IdentityCard extends Applet {
 			byte[] encryptedBuffer = encryptDataLCP(transactions);
 			
 			//empty buffer
-			for(int i = 0; i<transactions.length; i++){
-				transactions[i] = 0;
-			}
+			transactions = new byte[120];
+
 			
 			//return encrypted trans amount
 			apdu.setOutgoing();
@@ -250,24 +283,24 @@ public class IdentityCard extends Applet {
 		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
 		else{
 			apdu.setIncomingAndReceive();
-			
 			byte[] transAmountByte = shortToByte(transactionCounter);
-			byte[] transactionAmountByte = new byte[8];
-			transactionAmountByte[0] = transAmountByte[0];
-			transactionAmountByte[1] = transAmountByte[1];
-			transactionAmountByte[2] = 0;
-			transactionAmountByte[3] = 0;
-			transactionAmountByte[4] = 0;
-			transactionAmountByte[5] = 0;
-			transactionAmountByte[6] = 0;
-			transactionAmountByte[7] = 0;
+			
+			byte[] transactionAmountByte = new byte[(short)8];
+			transactionAmountByte[(short)0] = transAmountByte[(short)0];
+			transactionAmountByte[(short)1] = transAmountByte[(short)1];
+			transactionAmountByte[(short)2] = (byte)0x00;
+			transactionAmountByte[(short)3] = (byte)0x00;
+			transactionAmountByte[(short)4] = (byte)0x00;
+			transactionAmountByte[(short)5] = (byte)0x00;
+			transactionAmountByte[(short)6] = (byte)0x00;
+			transactionAmountByte[(short)7] = (byte)0x00;
 			
 			byte[] encryptedTransAmount = encryptDataShop(transactionAmountByte);
 			
 			//return encrypted trans amount
 			apdu.setOutgoing();
-			apdu.setOutgoingLength((short) 8);
-			apdu.sendBytesLong(encryptedTransAmount, (short) 0, (short) 8);
+			apdu.setOutgoingLength((short) encryptedTransAmount.length);
+			apdu.sendBytesLong(encryptedTransAmount, (short) 0, (short) encryptedTransAmount.length);
 		}
 		
 	}
@@ -311,12 +344,18 @@ public class IdentityCard extends Applet {
 			byte[] previousPointsByte = shortToByte(previousPoints);
 			
 			//set transaction in transaction buffer
-			transactions[transactionCounter*6] 		= shopIdByte[0]; 
-			transactions[transactionCounter*6 + 1]	= shopIdByte[1]; 
-			transactions[transactionCounter*6 + 2]	= previousPointsByte[0]; 
-			transactions[transactionCounter*6 + 3]	= previousPointsByte[1]; 			
-			transactions[transactionCounter*6 + 4] 	= updateByte[0];
-			transactions[transactionCounter*6 + 5] 	= updateByte[1];
+			short i1 = (short) (transactionCounter*6);
+			short i2 = (short) ((short) (transactionCounter*6) + 1);
+			short i3 = (short) ((short) (transactionCounter*6) + 2);
+			short i4 = (short) ((short) (transactionCounter*6) + 3);
+			short i5 = (short) ((short) (transactionCounter*6) + 4);
+			short i6 = (short) ((short) (transactionCounter*6) + 5);
+			transactions[i1] 	= shopIdByte[0]; 
+			transactions[i2]	= shopIdByte[1]; 
+			transactions[i3]	= previousPointsByte[0]; 
+			transactions[i4]	= previousPointsByte[1]; 			
+			transactions[i5] 	= updateByte[0];
+			transactions[i6] 	= updateByte[1];
 			transactionCounter = (short) (transactionCounter + 1);
 			
 			//return points

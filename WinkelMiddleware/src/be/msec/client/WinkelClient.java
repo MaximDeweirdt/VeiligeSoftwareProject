@@ -66,6 +66,7 @@ public class WinkelClient {
 	private static final byte UPD_POINTS_INS = 0x45;
 	private static final byte REQ_TRANS_AMOUNT = 0x46;
 	private static final byte REQ_TRANS_BUFFER = 0x47;
+	private static final byte CHECK_TRANS_AMOUNT_INS = 0x48;
 	
 	
 	
@@ -184,14 +185,16 @@ public class WinkelClient {
 			
 			winkelOut.writeObject(pseudoniemKaart);//winkel checkt pseudoniem en geeft zijnn eigen cert 
 			
+			//nu beschikken ze alletwee over elkaars public key en zullen ze dus ne symmetric key kunnen vormen elk
+			keyAgreementWithShop(a,r,c);
 			
 			input = (byte[])winkelIn.readObject();//accepted of denied naargelang het cert van kaart
 			//INSTRUCTION CARD CHECK ACCPETED OR DENIED (deze input tekst is geencrypteerd)
+			System.out.println(input.length + "!!!!");
 			String accepted = decryptShopCardText(a,r,c,input);
 			//TEKST BALLON OP LATEN KOMEN ALS DE RESPONSE GELIJK IS AAN DENIEDED => weergegeven dat hij opnieuw moet registreren bij de LCP voor diene winkel
 			
-			//nu beschikken ze alletwee over elkaars public key en zullen ze dus ne symmetric key kunnen vormen elk
-			keyAgreementWithShop(a,r,c);
+			
 			
 			
 			boolean transAllowed = true; //trans hangt af of de server denieded of accepted terug stuurt na het verzende van het aantal transacties
@@ -199,7 +202,7 @@ public class WinkelClient {
 				
 				winkelOut.writeObject(requestTransActionAmount(a,r,c));
 				input = (byte[])winkelIn.readObject();
-				transAllowed= true; //hier moet de kaart dus vertalen of de server accepted of denied terug gestuurd heeft
+				transAllowed= checkTransAllowed(a,r,c,input); //hier moet de kaart dus vertalen of de server accepted of denied terug gestuurd heeft
 				//en zeggen of transactie nog mag of niet
 				//accepted teruggekregen =>true
 				if(transAllowed){
@@ -235,6 +238,17 @@ public class WinkelClient {
 
 	}
 	
+
+	private static boolean checkTransAllowed(CommandAPDU a, ResponseAPDU r, IConnection c, byte[] input) throws Exception {
+		a = new CommandAPDU(IDENTITY_CARD_CLA, CHECK_TRANS_AMOUNT_INS, (byte) (input.length&0xff), 0x00,input);
+		r = c.transmit(a);
+		System.out.println("response check trans amount = " + r);
+		byte[] response = r.getData();
+		System.out.println("response van de check = " + response[0]);
+		if(response[0]==1) return true;
+		else return false;
+	}
+
 
 	private static byte[] requestTransActionBuffer(CommandAPDU a, ResponseAPDU r, IConnection c) throws Exception {
 		a = new CommandAPDU(IDENTITY_CARD_CLA, REQ_TRANS_BUFFER ,0x00, 0x00,new byte[]{0x00});
