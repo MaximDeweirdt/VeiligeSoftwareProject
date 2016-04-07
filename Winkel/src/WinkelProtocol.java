@@ -127,7 +127,7 @@ public class WinkelProtocol {
 			byte[] input = (byte[]) theInput;
 			byte[] decryptedInput = decryptInput(input);
 			short nPoints = byteArrayToShort(decryptedInput);
-			WinkelGUI.addText("je hebt " + nPoints + ", geef het aantal punten toe te voegen of af te trekken: ");
+			WinkelGUI.addText("je hebt " + nPoints + " punten, geef het aantal punten toe te voegen of af te trekken: ");
 			
 			short addjustPoints = WinkelGUI.promptForThemPoints(nPoints);
 			
