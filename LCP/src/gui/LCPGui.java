@@ -9,6 +9,7 @@ import java.text.SimpleDateFormat;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.text.DefaultCaret;
 
 public class LCPGui extends JFrame{
 	
@@ -31,6 +32,8 @@ public class LCPGui extends JFrame{
 		area.setDisabledTextColor(Color.black);
 		area.setLineWrap(true);
 		area.setWrapStyleWord(true);
+		DefaultCaret caret = (DefaultCaret)area.getCaret();
+		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 		scrollPane.setPreferredSize(new Dimension(385, 385));
 		pane.add(scrollPane);
 		setVisible(true);

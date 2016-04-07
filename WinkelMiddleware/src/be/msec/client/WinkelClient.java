@@ -36,6 +36,8 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.DESKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.smartcardio.*;
+import javax.swing.JDialog;
+import javax.swing.JOptionPane;
 
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
@@ -94,6 +96,7 @@ public class WinkelClient {
 		};
 	
 	public static void main(String[] args) throws Exception {
+		WinkelMiddelwareGUI gui = new WinkelMiddelwareGUI();
 		IConnection c;
 		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 		//Real Card:
@@ -118,14 +121,13 @@ public class WinkelClient {
 		ObjectOutputStream winkelOut;
 		ObjectInputStream winkelIn;
 		
-		System.out.print("winkelkeuze = ");
-		int winkelnummer = Integer.parseInt(SCANNER.nextLine());
-		byte[] winkelKeuze;
-		while (winkelnummer < 0 || winkelnummer > 3) {
-			System.err.println("Het ingegeven winkelnummer is niet correct");
-			winkelnummer = Integer.parseInt(SCANNER.nextLine());
-		}
-		
+		WinkelMiddelwareGUI.addText("winkelkeuze = ");
+		JDialog.setDefaultLookAndFeelDecorated(true);
+		byte [] winkelKeuze;
+		String [] keuzes = {"0", "1", "2", "3"};
+		String winkelNummer = (String) JOptionPane.showInputDialog(null, "Kies een winkel", "Winkel kiezen", JOptionPane.QUESTION_MESSAGE, null, keuzes, keuzes[0]);
+		WinkelMiddelwareGUI.addText(winkelNummer);
+		short winkelnummer = Short.parseShort(winkelNummer);
 		winkelKeuze = shortToByte((short)winkelnummer);
 		winkelPortNumber = winkelStartPortNumber + winkelnummer; 
 		
@@ -353,7 +355,7 @@ public class WinkelClient {
 	private static void loginCard(CommandAPDU a, ResponseAPDU r, IConnection c,byte[] pin) throws Exception{
 		boolean correctPin = false;
 		System.out.print("PIN (pin is 1234) = ");
-		String pinInput = SCANNER.nextLine();
+		String pinInput = JOptionPane.showInputDialog("Geef u PIN");
 		byte[] p = new byte[]{
 				(byte)(Integer.parseInt("" + pinInput.charAt(0))),
 				(byte)(Integer.parseInt("" + pinInput.charAt(1))),
@@ -362,36 +364,36 @@ public class WinkelClient {
 		};
 		a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00,p);
 		r = c.transmit(a);
-		System.out.println(r);
-		if (r.getSW()==SW_VERIFICATION_FAILED)System.out.println("pin is incorrect");
-		else if(r.getSW()!=0x9000)System.out.println("pin is incorrect");
+		WinkelMiddelwareGUI.addText(r.toString());
+		if (r.getSW()==SW_VERIFICATION_FAILED)WinkelMiddelwareGUI.addText("pin is incorrect");
+		else if(r.getSW()!=0x9000)WinkelMiddelwareGUI.addText("pin is incorrect");
 		else correctPin = true;
-		System.out.println("PIN Verified");
+		WinkelMiddelwareGUI.addText("PIN Verified");
 		
 		
 		System.out.println(r);
 		int tries = 1;
 
 		while(!correctPin && tries<3){
-			System.out.print("PIN (pin is 1234) = ");
-			pinInput = SCANNER.nextLine();
+			WinkelMiddelwareGUI.addText("PIN (pin is 1234) = ");
+			pinInput = JOptionPane.showInputDialog("Geef u PIN");
 			p = new byte[]{
 					(byte)(Integer.parseInt("" + pinInput.charAt(0))),
 					(byte)(Integer.parseInt("" + pinInput.charAt(1))),
 					(byte)(Integer.parseInt("" + pinInput.charAt(2))),
 					(byte)(Integer.parseInt("" + pinInput.charAt(3))),
 			};
-			System.out.println(p[1] + "  " + pin[1]);
+			WinkelMiddelwareGUI.addText(p[1] + "  " + pin[1]);
 			a = new CommandAPDU(IDENTITY_CARD_CLA, VALIDATE_PIN_INS, 0x00, 0x00,p);
 			r = c.transmit(a);
-			System.out.println(r + "!!!!!!!");
-			if (r.getSW()==SW_VERIFICATION_FAILED)System.out.println("pin is incorrect");
-			else if(r.getSW()!=0x9000) System.out.println("pin is incorrect");
+			WinkelMiddelwareGUI.addText(r + "!!!!!!!");
+			if (r.getSW()==SW_VERIFICATION_FAILED)WinkelMiddelwareGUI.addText("pin is incorrect");
+			else if(r.getSW()!=0x9000) WinkelMiddelwareGUI.addText("pin is incorrect");
 			else correctPin = true;
 			tries++;
 		}
-		if(correctPin)System.out.println("PIN Verified");
-		System.out.println();
+		if(correctPin)WinkelMiddelwareGUI.addText("PIN Verified");
+		WinkelMiddelwareGUI.addText("");
 	}
 	
 	private static byte[] keyAgreementLCPAndCard(CommandAPDU a, ResponseAPDU r, IConnection c) throws Exception{
@@ -400,9 +402,9 @@ public class WinkelClient {
 		r = c.transmit(a);
 		byte[] symmetricKey = r.getData();
 		//System.out.println("serialnumber = " + serialNumber);
-		System.out.println("key agreement with the LCP in the card: " + r);
-		System.out.println("symmetric key with LCP = " + new BigInteger(1,symmetricKey).toString(16));
-		System.out.println();
+		WinkelMiddelwareGUI.addText("key agreement with the LCP in the card: " + r);
+		WinkelMiddelwareGUI.addText("symmetric key with LCP = " + new BigInteger(1,symmetricKey).toString(16));
+		WinkelMiddelwareGUI.addText("");
 		return symmetricKey;
 	}
 	
@@ -411,14 +413,14 @@ public class WinkelClient {
 		byte[] certificate = new byte[263];
 		a = new CommandAPDU(IDENTITY_CARD_CLA, GET_PART1_CERTIFICATE , 0x00 , 0x00,new byte[]{(byte)0xff});
 		r = c.transmit(a);
-		System.out.println("part1 " + r);
+		WinkelMiddelwareGUI.addText("part1 " + r);
 		bb.put(r.getData());
 		a = new CommandAPDU(IDENTITY_CARD_CLA, GET_PART2_CERTIFICATE , 0x00 , 0x00,new byte[]{(byte)0xff});
 		r = c.transmit(a);
-		System.out.println("part2 " + r);
+		WinkelMiddelwareGUI.addText("part2 " + r);
 		bb.put(r.getData());
 		certificate = bb.array();
-		System.out.println("certificaat = " + new BigInteger(1,certificate).toString(16));
+		WinkelMiddelwareGUI.addText("certificaat = " + new BigInteger(1,certificate).toString(16));
 		return certificate;
 	}
 	
@@ -426,14 +428,14 @@ public class WinkelClient {
 		//versturen van winkelkeuze naar de kaart
 		a = new CommandAPDU(IDENTITY_CARD_CLA, SET_ID_SHOP_INS, (byte) (shopId.length&0xff), 0x00,shopId);
 		r = c.transmit(a);
-		System.out.println(r);
+		WinkelMiddelwareGUI.addText(r.toString());
 		short lngth = (short) textinCipher.length;
 		//System.out.println(byteToShort((byte)(lngth&0xff)));
 		//setten van pseudoniem in de kaart
 		byte []pseudoniem = textinCipher;
 		a = new CommandAPDU(IDENTITY_CARD_CLA, SET_PSEUDONIEM_INS, lngth, 0x00,pseudoniem);
 		r = c.transmit(a);
-		System.out.println(r);
+		WinkelMiddelwareGUI.addText(r.toString());
 	//	System.err.println(byteArrayToShort(r.getData()));
 	}
 	

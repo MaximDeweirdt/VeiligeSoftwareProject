@@ -10,9 +10,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.util.Date;
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -23,6 +20,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.text.DefaultCaret;
 
 import be.msec.client.Client;
 
@@ -54,14 +52,13 @@ public class MiddelwareGui extends JFrame {
 		area = new JTextArea("Dit is de interface voor de client middleware.\n\n");
 		scrollPane = new JScrollPane(area);
 		numpad = new NumPad();
-
 		init();
 
 	}
 
 	private void init() {
 		setTitle("Middelware");
-		setSize(1000, 550);
+		setSize(700, 700);
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		addWindowListener(new WindowListener() {
@@ -126,6 +123,7 @@ public class MiddelwareGui extends JFrame {
 		area.setDisabledTextColor(Color.black);
 		area.setLineWrap(true);
 		area.setWrapStyleWord(true);
+		area.setCaretPosition(area.getDocument().getLength());
 		pane.add(scrollPane);
 	}
 
@@ -147,6 +145,7 @@ public class MiddelwareGui extends JFrame {
 		private JButton b7 = new JButton("7");
 		private JButton b8 = new JButton("8");
 		private JButton b9 = new JButton("9");
+		
 		private JButton correction = new JButton("Corr");
 		private JButton stop = new JButton("Stop");
 		private JButton enter = new JButton("Enter");

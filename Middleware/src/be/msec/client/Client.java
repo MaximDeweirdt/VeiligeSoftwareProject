@@ -37,11 +37,6 @@ public class Client {
 	private static final int ENTER_PIN = 100;
 	private static final int ENTER_STORE = 101;
 
-
-
-
-
-
 	private MiddelwareGui gui;
 	private IConnection c;
 	private CommandAPDU a;
@@ -136,10 +131,6 @@ public class Client {
 		} else {
 			pinValid = true;
 		}
-
-		if (pinValid)
-			System.out.println("PIN Verified");
-		System.out.println(pinValid);
 	}
 
 	public void keyAgreementLCPAndCard() throws Exception {

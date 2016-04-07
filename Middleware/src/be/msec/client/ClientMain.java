@@ -341,7 +341,7 @@ public class ClientMain {
 		else return true;
 	}
 
-	public static boolean loginCard(CommandAPDU a, ResponseAPDU r, IConnection c,String pin) throws Exception{
+	private static boolean loginCard(CommandAPDU a, ResponseAPDU r, IConnection c,String pin) throws Exception{
 		boolean correctPin = false;
 		
 		System.out.print("PIN (pin is 1234) = ");

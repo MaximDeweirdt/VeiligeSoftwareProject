@@ -22,6 +22,7 @@ import javax.crypto.spec.DESKeySpec;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 
 public class WinkelProtocol {
+	
 	private Cipher cipher;
 	private WinkelThread wt;
 	private SecretKey secretKey; //used for cipher
@@ -64,7 +65,7 @@ public class WinkelProtocol {
 				cardCert.checkValidity();
 				cardCert.verify(WinkelMain.getPublicKeyLCP());
 			}catch(Exception e){
-				System.err.println("signature doesn't match");
+				WinkelGUI.addText("signature doesn't match");
 				byte[] denied = { 'd', 'e', 'n', 'i', 'e', 'd', 'e', 'd' };
 				theOutput = encryptOutput(denied);
 				return theOutput;
@@ -80,7 +81,7 @@ public class WinkelProtocol {
 			byte[] decryptedInput = decryptInput(input);
 			
 			if(decryptedInput[0] == 'd'){
-				System.err.println("winkelCertificaat niet aanvaard");
+				WinkelGUI.addText("winkelCertificaat niet aanvaard");
 			}
 			else if(decryptedInput[0] == 'a'){
 				
@@ -108,15 +109,15 @@ public class WinkelProtocol {
 			byte[] input = (byte[]) theInput;
 			byte[] decryptedInput = decryptInput(input);
 			short nTrans = byteArrayToShort(decryptedInput);
-			System.out.println("je hebt " + nTrans + " transacties ondernomen ");
+			WinkelGUI.addText("je hebt " + nTrans + " transacties ondernomen ");
 			if(nTrans<20){
-				System.out.println("Je mag nog " + (20-nTrans) + " transacties uitvoeren voor contact op te nemen met de LCP");
+				WinkelGUI.addText("Je mag nog " + (20-nTrans) + " transacties uitvoeren voor contact op te nemen met de LCP");
 				state = CHANGEPOINTSSTATE;
 				byte[] accepted = { 'a', 'c', 'c', 'e', 'p', 't', 'e', 'd' };
 				theOutput = encryptOutput(accepted);
 			}
 			else{
-				System.out.println("Neem contact op met de LCP voordat er nieuwe transacties kunnen uitgevoerd worden");
+				WinkelGUI.addText("Neem contact op met de LCP voordat er nieuwe transacties kunnen uitgevoerd worden");
 				state = CHECKTRANSACTIONSTATE;
 				byte[] denied = { 'd', 'e', 'n', 'i', 'e', 'd', 'e', 'd' };
 				theOutput = encryptOutput(denied);
@@ -126,9 +127,9 @@ public class WinkelProtocol {
 			byte[] input = (byte[]) theInput;
 			byte[] decryptedInput = decryptInput(input);
 			short nPoints = byteArrayToShort(decryptedInput);
-			System.out.println("je hebt " + nPoints + ", geef het aantal punten toe te voegen of af te trekken: ");
+			WinkelGUI.addText("je hebt " + nPoints + ", geef het aantal punten toe te voegen of af te trekken: ");
 			
-			short addjustPoints = (short) sc.nextInt();
+			short addjustPoints = WinkelGUI.promptForThemPoints(nPoints);
 			
 			secretKey = secretKeyLCP;
 			SendTransactionToLCP(nPoints, addjustPoints, cardCert, WinkelMain.winkelNummer);
@@ -156,7 +157,7 @@ public class WinkelProtocol {
 		byte[] decryptedInput = decryptInput(input);
 		
 		if(decryptedInput[0] == 'd'){
-			System.err.println("winkelCertificaat niet aanvaard");
+			WinkelGUI.addText("winkelCertificaat niet aanvaard");
 		}
 		else if(decryptedInput[0] == 'a'){
 			
@@ -166,7 +167,7 @@ public class WinkelProtocol {
 			decryptedInput = decryptInput(input);
 
 			if(decryptedInput[0] == 'd'){
-				System.err.println("LCP did not find this Card");
+				WinkelGUI.addText("LCP did not find this Card");
 			}
 			else{
 				
