@@ -2,6 +2,7 @@ package main;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.Security;
@@ -128,6 +129,7 @@ public class MainLCP {
 
 	public static void setCardCert(X509Certificate cardCert) {
 		MainLCP.cardCert = cardCert;
+		
 	}
 
 	public static Map<X509Certificate, CertificateData> getCertList() {
@@ -136,6 +138,8 @@ public class MainLCP {
 
 	public static void addCertToList(X509Certificate virtualCardCert) {
 		MainLCP.certList.put(virtualCardCert, new CertificateData());
+		String [] tableEntry = {virtualCardCert.getIssuerDN().getName().substring(6), virtualCardCert.getSerialNumber().toString(), ""+certList.get(virtualCardCert).isValid()};
+		LCPGui.addCertToTable(tableEntry);
 	}
 
 
@@ -162,6 +166,20 @@ public class MainLCP {
 		if(MainLCP.certList.containsKey(cert)){
 			MainLCP.certList.get(cert).setValid(false);
 		}
+	}
+	
+	public static X509Certificate getCert(BigInteger serienummer){
+		for(Map.Entry<X509Certificate, CertificateData> entry : certList.entrySet()){
+			if(entry.getKey().getSerialNumber().equals(serienummer)) return entry.getKey();
+		}
+		return null;
+	}
+	
+	public static boolean certIsValid(BigInteger serienummer){
+		for(Map.Entry<X509Certificate, CertificateData> entry : certList.entrySet()){
+			if(entry.getKey().getSerialNumber().equals(serienummer)) return certList.get(entry.getKey()).isValid();
+		}
+		return false;
 	}
 }
 		
