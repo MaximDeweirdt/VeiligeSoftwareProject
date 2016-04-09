@@ -138,7 +138,7 @@ public class MainLCP {
 
 	public static void addCertToList(X509Certificate virtualCardCert) {
 		MainLCP.certList.put(virtualCardCert, new CertificateData());
-		String [] tableEntry = {virtualCardCert.getIssuerDN().getName().substring(6), virtualCardCert.getSerialNumber().toString(), ""+certList.get(virtualCardCert).isValid()};
+		String [] tableEntry = {virtualCardCert.getIssuerDN().getName(), virtualCardCert.getSerialNumber().toString(), ""+certList.get(virtualCardCert).isValid()};
 		LCPGui.addCertToTable(tableEntry);
 	}
 
