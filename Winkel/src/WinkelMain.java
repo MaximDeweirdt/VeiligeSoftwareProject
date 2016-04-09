@@ -54,11 +54,13 @@ public class WinkelMain {
 				JOptionPane.QUESTION_MESSAGE, null, posibilities, posibilities[0]);
 		
 		if(winkelKeuze == null || (winkelKeuze != null && winkelKeuze.equals(""))) System.exit(0);
-		
+		else if(winkelKeuze.equals("Colruyt")) winkelNummer = 0;
+		else if(winkelKeuze.equals("Delhaize")) winkelNummer = 1;
+		else if(winkelKeuze.equals("Alienware")) winkelNummer = 2;
+		else  winkelNummer = 3;
 		// Inlezen van het winkelnummer
 		// Dit blijft gebeuren dat het winkelnummer een aanvaardbaar nummer is
 		// (nummer tussen 1-4).
-		winkelNummer = Integer.parseInt(winkelKeuze);
 
 		// Een juist winkel object maken op basis van het ingelezen
 		// winkelnummer.
