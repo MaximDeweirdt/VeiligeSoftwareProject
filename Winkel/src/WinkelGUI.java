@@ -52,6 +52,7 @@ public class WinkelGUI extends JFrame {
 		String punten = JOptionPane.showInputDialog(null,
 				"Klant heeft " + nPoints + " momenteel. Geef het aantal punten in dat toegevoegd moet worden.",
 				"Punten", JOptionPane.QUESTION_MESSAGE);
+		if(punten == null || (punten != null && "".equals(punten))) return (short) 0;
 		return Short.parseShort(punten);
 	}
 	
