@@ -194,12 +194,17 @@ public class WinkelClient {
 			//INSTRUCTION CARD CHECK ACCPETED OR DENIED (deze input tekst is geencrypteerd)
 			System.out.println(input.length + "!!!!");
 			String accepted = decryptShopCardText(a,r,c,input);
+			System.out.println("accepted = " + accepted);
 			//TEKST BALLON OP LATEN KOMEN ALS DE RESPONSE GELIJK IS AAN DENIEDED => weergegeven dat hij opnieuw moet registreren bij de LCP voor diene winkel
 			
 			
-			
-			
-			boolean transAllowed = true; //trans hangt af of de server denieded of accepted terug stuurt na het verzende van het aantal transacties
+			boolean transAllowed;
+			if(accepted.equals("accepted")){
+				transAllowed = true;
+			}else{
+				transAllowed = false;
+			}
+			//trans hangt af of de server denieded of accepted terug stuurt na het verzende van het aantal transacties
 			while(transAllowed){
 				
 				winkelOut.writeObject(requestTransActionAmount(a,r,c));
