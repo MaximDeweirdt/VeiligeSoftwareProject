@@ -29,6 +29,7 @@ public class Client {
 	private static final byte GET_PART2_CERTIFICATE = 0x08;
 	private static final byte CHECK_CERT_INS = 0x09;
 	private static final byte ENCRYPT_SHOP_ID_INS = 0x11;
+	private static final byte REQ_INFO_CLIENT = 0x14;
 
 	private final static short SW_VERIFICATION_FAILED = 0x6300;
 	private final static short SW_PIN_VERIFICATION_REQUIRED = 0x6301;
@@ -289,6 +290,22 @@ public class Client {
 		}
 		
 		System.out.println(new String(response));
+	}
+	
+	public void requestInfo() throws Exception{
+		a = new CommandAPDU(IDENTITY_CARD_CLA, REQ_INFO_CLIENT, 0x00, 0x00, new byte [] {0x00});
+		r = c.transmit(a);
+		gui.addText(r.toString());
+		byte [] info = r.getData();
+		short nTrans = ClientMain.byteArrayToShort(new byte [] {info[0], info[1]});
+		short colruytPunten = ClientMain.byteArrayToShort(new byte []{info[2], info[3]});
+		short delhaizePunten = ClientMain.byteArrayToShort(new byte []{info[4], info[5]});
+		short alienwarePunten = ClientMain.byteArrayToShort(new byte []{info[6], info[7]});
+		short razorPunten = ClientMain.byteArrayToShort(new byte []{info[8], info[9]});
+		gui.showClientInfo(new short [] {nTrans, colruytPunten, delhaizePunten, alienwarePunten, razorPunten});
+		
+		
+		
 	}
 
 }

@@ -145,7 +145,7 @@ public class MiddelwareGui extends JFrame {
 		private JButton b7 = new JButton("7");
 		private JButton b8 = new JButton("8");
 		private JButton b9 = new JButton("9");
-		
+
 		private JButton correction = new JButton("Corr");
 		private JButton stop = new JButton("Stop");
 		private JButton enter = new JButton("Enter");
@@ -272,13 +272,15 @@ public class MiddelwareGui extends JFrame {
 				} else if (arg0.getSource() == sendLog) {
 					// TODO: send log to LCP
 					try {
+						
 						client.emptyBuffer();
+						client.requestInfo();
 					} catch (Exception e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 					setTextOfField("Sending log to LCP");
-					
+
 				} else {
 					buffer.append(((JButton) arg0.getSource()).getText());
 					jtf.setText(buffer.toString());
@@ -317,6 +319,7 @@ public class MiddelwareGui extends JFrame {
 			JDialog.setDefaultLookAndFeelDecorated(true);
 			JOptionPane.showMessageDialog(null, PIN_INVALID_MSG_3, PIN_INVALID_MSG_TITLE, JOptionPane.ERROR_MESSAGE);
 		} else {
+			client.requestInfo();
 			client.resetPinTries();
 			client.keyAgreementLCPAndCard();
 			client.requestCertificate();
@@ -329,6 +332,15 @@ public class MiddelwareGui extends JFrame {
 
 	public void addText(String text) {
 		area.append(text + "\n");
+	}
+
+	public void showClientInfo(short[] info) {
+		JDialog.setDefaultLookAndFeelDecorated(true);
+		String infoMessage = "Er zijn momenteel " + info[0]
+				+ " transacties gebeurt met deze kaart.\n Aantal punten bij Colruyt: " + info[1]
+				+ "\n Aantal punten bij Delhaize: " + info[2] + "\n Aantal punten bij Alienware: " + info[3]
+				+ "\n Aantal punten bij Razor: " + info[4];
+		JOptionPane.showMessageDialog(null, infoMessage, "Client info.", JOptionPane.INFORMATION_MESSAGE);
 	}
 
 }
