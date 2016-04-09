@@ -41,7 +41,7 @@ public class IdentityCard extends Applet {
 	private static final byte ENCRYPT_SHOP_ID_INS = 0x11;
 	private static final byte REQ_PSEUDONIEM_SHOP = 0x12;
 	private static final byte REQ_TRANS_BUFFER_SHOP = 0x13;
-	
+	private static final byte REQ_INFO_CLIENT = 0x14;
 	
 	private static final byte REQ_PSEUDONIEM_INS = 0x40;
 	private static final byte CERT_SHOP_INFO_INS = 0x41;
@@ -52,6 +52,7 @@ public class IdentityCard extends Applet {
 	private static final byte REQ_TRANS_AMOUNT = 0x46;
 	private static final byte REQ_TRANS_BUFFER = 0x47;
 	private static final byte CHECK_TRANS_AMOUNT_INS = 0x48;
+	
 	
 	private final static byte PIN_TRY_LIMIT = (byte) 0x03;
 	private final static byte PIN_SIZE = (byte) 0x04;
@@ -234,6 +235,9 @@ public class IdentityCard extends Applet {
 		case REQ_TRANS_BUFFER_SHOP:
 			sendTransBufferShop(apdu);
 			break;
+		case REQ_INFO_CLIENT:
+			infoClient(apdu);
+			break;
 		// If no matching instructions are found it is indicated in the status
 		// word of the response.
 		// This can be done by using this method. As an argument a short is
@@ -244,6 +248,42 @@ public class IdentityCard extends Applet {
 			ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
 			break;
 		}
+	}
+
+	private void infoClient(APDU apdu) {
+		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+		else{
+			apdu.setIncomingAndReceive();
+			byte[] info = new byte[10];
+			
+			//opslaan aantal transacties
+			byte[]amountOfTransActions = shortToByte(transactionCounter);
+			info[0] = amountOfTransActions[0];
+			info[1] = amountOfTransActions[1];
+			
+			//opslaan van de punten
+			byte[] colruytPointsByte = shortToByte(colruytPoints);//COLRUYT
+			info[2] = colruytPointsByte[0];
+			info[3] = colruytPointsByte[1];
+			
+			byte[] delhaizePointsByte = shortToByte(delhaizePoints);//DELHIZE
+			info[4] = delhaizePointsByte[0];
+			info[5] = delhaizePointsByte[1];
+			
+			byte[] alienwarePointsByte = shortToByte(alienWarePoints);//ALIENWARE
+			info[6] = alienwarePointsByte[0];
+			info[7] = alienwarePointsByte[1];
+			
+			byte[] razorPointsByte = shortToByte(razorPoints);//RAZOR
+			info[8] = razorPointsByte[0];
+			info[9] = razorPointsByte[1];
+			
+			//send back info
+			apdu.setOutgoing();
+			apdu.setOutgoingLength((short) info.length);
+			apdu.sendBytesLong(info, (short) 0, (short) info.length);
+		}
+		
 	}
 
 	private void sendTransBufferShop(APDU apdu) {
