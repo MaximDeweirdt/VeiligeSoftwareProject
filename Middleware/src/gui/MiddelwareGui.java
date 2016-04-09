@@ -161,6 +161,7 @@ public class MiddelwareGui extends JFrame {
 			numpadPanel = new JPanel(new GridLayout(4, 4));
 			numpadPanel.setSize(new Dimension(300, 300));
 
+			jtf.setEditable(false);
 			fill1.setEnabled(false);
 			fill2.setEnabled(false);
 
