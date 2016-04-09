@@ -19,6 +19,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
+import javax.swing.JDialog;
+import javax.swing.JOptionPane;
+
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 
@@ -30,40 +33,37 @@ public class WinkelMain {
 	private static X509Certificate winkelCert;
 	private static Winkel winkel;
 	public static int winkelNummer;
-	private static final char [] KEYSTOREPASWOORD = "kiwikiwi".toCharArray();
-	
-	
-	
+	private static final char[] KEYSTOREPASWOORD = "kiwikiwi".toCharArray();
+
 	private static final Scanner SCANNER = new Scanner(System.in);
-	
+
 	private static final String ALIENWARE_NAME = "Alienware";
 	private static final String COLRUYT_NAME = "Colruyt";
 	private static final String DELHAIZE_NAME = "Delhaize";
 	private static final String RAZOR_NAME = "Razor";
-	
+
 	/**
 	 * @param args
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
 
-
-		System.out.println("Geef het nummer van de winkel.");
-		System.out.println("Colruyt    \t0\nDelhaize\t1\nAlienware\t2\nRazor      \t3");
-
+		JDialog.setDefaultLookAndFeelDecorated(true);
+		String[] posibilities = { "Colruyt", "Delhaize", "Alienware", "Razor" };
+		String winkelKeuze = (String) JOptionPane.showInputDialog(null, "Kies een winkel", "Winkel kueze",
+				JOptionPane.QUESTION_MESSAGE, null, posibilities, posibilities[0]);
+		
+		if(winkelKeuze == null || (winkelKeuze != null && winkelKeuze.equals(""))) System.exit(0);
+		
 		// Inlezen van het winkelnummer
 		// Dit blijft gebeuren dat het winkelnummer een aanvaardbaar nummer is
 		// (nummer tussen 1-4).
-		winkelNummer = Integer.parseInt(SCANNER.nextLine());
-		
-		while (winkelNummer < 0 || winkelNummer > 3) {
-			System.err.println("Het ingegeven winkelnummer is niet correct");
-			winkelNummer = Integer.parseInt(SCANNER.nextLine());
-		}
+		winkelNummer = Integer.parseInt(winkelKeuze);
 
-		// Een juist winkel object maken op basis van het ingelezen winkelnummer.
+		// Een juist winkel object maken op basis van het ingelezen
+		// winkelnummer.
 		// Default wordt Alienware gemaakt.
-		
+
 		switch (winkelNummer) {
 		case 0:
 			winkel = new Winkel(COLRUYT_NAME);
@@ -84,9 +84,9 @@ public class WinkelMain {
 		}
 		makeKeysAndCerts(winkelNummer);
 		winkel.startGUI();
-		
-		int portNumber = 5000+winkelNummer;
-		
+
+		int portNumber = 5000 + winkelNummer;
+
 		ServerSocket ss = new ServerSocket(portNumber);
 		System.out.println("RegisterSocket Ready");
 		while (true) {
@@ -98,48 +98,50 @@ public class WinkelMain {
 
 		}
 	}
-	
+
 	private static void makeKeysAndCerts(int winkelNummer) throws Exception {
-		
+
 		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
-		
-		KeyFactory kf = KeyFactory.getInstance("EC", "BC"); 
-		
+
+		KeyFactory kf = KeyFactory.getInstance("EC", "BC");
+
 		// get public key and private key
-		setPublicKeyWinkel((ECPublicKey) kf.generatePublic(new X509EncodedKeySpec(SecurityData.getPublicKey(winkelNummer))));
-		
-		setPrivateKeyWinkel((ECPrivateKey) kf.generatePrivate(new PKCS8EncodedKeySpec(SecurityData.getPrivateKey(winkelNummer))));
-		
+		setPublicKeyWinkel(
+				(ECPublicKey) kf.generatePublic(new X509EncodedKeySpec(SecurityData.getPublicKey(winkelNummer))));
+
+		setPrivateKeyWinkel(
+				(ECPrivateKey) kf.generatePrivate(new PKCS8EncodedKeySpec(SecurityData.getPrivateKey(winkelNummer))));
+
 		setPublicKeyLCP((ECPublicKey) kf.generatePublic(new X509EncodedKeySpec(SecurityData.getPublickeylcp())));
-	
+
 		KeyStore keyStore = KeyStore.getInstance("JKS");
-		String directoryNaam =  "keystore";
+		String directoryNaam = "keystore";
 		String bestandsNaam;
 		String fileName;
 		File keystoreFile;
 		FileInputStream keyIn;
-		switch(winkelNummer){
-		case 0: 
+		switch (winkelNummer) {
+		case 0:
 			bestandsNaam = "Colruytcert";
 			fileName = directoryNaam + "/" + bestandsNaam + "";
 			keystoreFile = new File(fileName);
 			System.out.println(keystoreFile.exists());
-			
+
 			keyIn = new FileInputStream(keystoreFile);
 			keyStore.load(keyIn, "kiwikiwi".toCharArray());
-			setWinkelCert((X509Certificate)keyStore.getCertificate("Colruytcert"));
+			setWinkelCert((X509Certificate) keyStore.getCertificate("Colruytcert"));
 			break;
 		case 1:
 			bestandsNaam = "DelhaizeCert";
 			fileName = directoryNaam + "/" + bestandsNaam + "";
 			keystoreFile = new File(fileName);
 			System.out.println(keystoreFile.exists());
-			
+
 			keyIn = new FileInputStream(keystoreFile);
 			keyStore.load(keyIn, "kiwikiwi".toCharArray());
-			setWinkelCert((X509Certificate)keyStore.getCertificate("DelhaizeCert"));
-		}	
-		
+			setWinkelCert((X509Certificate) keyStore.getCertificate("DelhaizeCert"));
+		}
+
 	}
 
 	public static ECPrivateKey getPrivateKeyWinkel() {
