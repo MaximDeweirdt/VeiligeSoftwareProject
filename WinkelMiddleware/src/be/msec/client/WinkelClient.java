@@ -211,7 +211,7 @@ public class WinkelClient {
 					byte[] encryptedPunten = requestShopPoints(a,r,c); //hier moet het aantal punten op de kaart komen, geencrypteerd
 					winkelOut.writeObject(encryptedPunten);
 					input = (byte[]) winkelIn.readObject(); //de wijziging in punten terug krijgen
-					updatePointsShop(a,r,c,input);
+					transAllowed = updatePointsShop(a,r,c,input);
 				}
 				else{
 					System.out.println("maximum aantal transacties bereikt");
@@ -272,12 +272,15 @@ public class WinkelClient {
 	}
 
 
-	private static void updatePointsShop(CommandAPDU a, ResponseAPDU r, IConnection c, byte[] encryptedChangedPoints) throws Exception {
+	private static boolean updatePointsShop(CommandAPDU a, ResponseAPDU r, IConnection c, byte[] encryptedChangedPoints) throws Exception {
 		a = new CommandAPDU(IDENTITY_CARD_CLA, UPD_POINTS_INS ,(byte) (encryptedChangedPoints.length&0xff), 0x00,encryptedChangedPoints);
 		r = c.transmit(a);
 		System.out.println("update points status" + r);
 		byte[] pointsByte = r.getData();
-		System.out.println("new points = " + byteArrayToShort(pointsByte));
+		short points = byteArrayToShort(pointsByte);
+		System.out.println("new points = " + points);
+		if(points==0) return false;
+		else return true;
 	}
 
 
