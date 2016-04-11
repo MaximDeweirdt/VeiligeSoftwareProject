@@ -17,6 +17,7 @@ import javax.crypto.spec.DESKeySpec;
 
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 
+import gui.LCPGui;
 import main.MainLCP;
 
 public class VerificationProtocol {
@@ -66,6 +67,7 @@ public class VerificationProtocol {
 			}
 			else{
 				byte[] denied = { 'd', 'e', 'n', 'i', 'e', 'd', 'e', 'd' };
+				makeSecretKey(cert);
 				theOutput = encryptOutput(denied);
 				state = KEYAGREESTATE;
 			}
@@ -78,6 +80,7 @@ public class VerificationProtocol {
 			X509Certificate cert = (X509Certificate) certFactory.generateCertificate(in);
 			if(MainLCP.getCertList().containsKey(cert)){
 				 valid = MainLCP.getCertList().get(cert).isValid();
+				 LCPGui.addText("certificaat ongeldig");
 			}
 			if(valid){
 				try {
@@ -115,6 +118,12 @@ public class VerificationProtocol {
 		}
 		else if(cert.getIssuerX500Principal().getName().contains("Delhaize")){
 			shopNR = 1;
+		}
+		else if(cert.getIssuerX500Principal().getName().contains("Alienware")){
+		      shopNR = 2;
+		}
+		else if(cert.getIssuerX500Principal().getName().contains("Razor")){
+		      shopNR = 3;
 		}
 		
 		byte[] shopNumber = shortToByte(shopNR);

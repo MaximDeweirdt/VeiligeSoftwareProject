@@ -160,74 +160,79 @@ public class WinkelClient {
 			if(correctCert==false){
 				loginCard(a,r,c,pin);
 			}
-			
-			//certificaat van de winkel vragen om te controleren of de winkel betrouwbaar is
-			//terwijl ook eigen psuedoniem certificaat naar de winkel sturen zodat deze kan controleren of die nog geldig is
-			
-			winkelOut.writeObject("gimmeCert");
-			input = (byte[])winkelIn.readObject();//het ganse X509 certificaat dat doorgestuurd wordt naar de LCP voor controle
-
-			verifyOut.writeObject(input);
-			input = (byte[]) verifyIn.readObject();
-			System.out.println("input =" + new BigInteger(1,input).toString(16));
-			// hier dan mss best da eenvoudig certificaat returnen, ofwel accepted of denied
-			/* als we me accepted en denied werken, moeten we daarna weer aan de winkel het eenvoudig certificaat vragen,
-			 * met die public key parameter. probleem daarmee is da de winkel het correcte certificaat kan sturen eerst en
-			 * daarna ne foute parameter voor die key en dan ist nie veilig
-			 * 
-			 * we kunnen als het klopt da eenvoudig certificaat terug sturen, als het niet klopt denied en dan kunde in 
-			 * de kaart aan de lengte ervan zien of het just is of niet zeker
-			 * 
-			 * dus deze input is da eenvoudig certificaat voorlopig
-			 * bestaande uit: {qparameter,shopNumber,serialnumber}
-			*/
-			setCertInfoShop(a,r,c,input);//hier wordt de Q parameter en het winkel id in de kaart geset
-			
-			byte[] pseudoniemKaart = requestPseudoniem(a,r,c);//give it to me card (niet geencrypteerd)
-			
-			winkelOut.writeObject(pseudoniemKaart);//winkel checkt pseudoniem en geeft zijnn eigen cert 
-			
-			//nu beschikken ze alletwee over elkaars public key en zullen ze dus ne symmetric key kunnen vormen elk
-			keyAgreementWithShop(a,r,c);
-			
-			input = (byte[])winkelIn.readObject();//accepted of denied naargelang het cert van kaart
-			//INSTRUCTION CARD CHECK ACCPETED OR DENIED (deze input tekst is geencrypteerd)
-			System.out.println(input.length + "!!!!");
-			String accepted = decryptShopCardText(a,r,c,input);
-			System.out.println("accepted = " + accepted);
-			//TEKST BALLON OP LATEN KOMEN ALS DE RESPONSE GELIJK IS AAN DENIEDED => weergegeven dat hij opnieuw moet registreren bij de LCP voor diene winkel
-			
-			
-			boolean transAllowed;
-			if(accepted.equals("accepted")){
-				transAllowed = true;
-			}else{
-				transAllowed = false;
-			}
-			//trans hangt af of de server denieded of accepted terug stuurt na het verzende van het aantal transacties
-			while(transAllowed){
+			else{
+				//certificaat van de winkel vragen om te controleren of de winkel betrouwbaar is
+				//terwijl ook eigen psuedoniem certificaat naar de winkel sturen zodat deze kan controleren of die nog geldig is
 				
-				winkelOut.writeObject(requestTransActionAmount(a,r,c));
-				input = (byte[])winkelIn.readObject();
-				transAllowed= checkTransAllowed(a,r,c,input); //hier moet de kaart dus vertalen of de server accepted of denied terug gestuurd heeft
-				//en zeggen of transactie nog mag of niet
-				//accepted teruggekregen =>true
-				if(transAllowed){
-					byte[] encryptedPunten = requestShopPoints(a,r,c); //hier moet het aantal punten op de kaart komen, geencrypteerd
-					winkelOut.writeObject(encryptedPunten);
-					input = (byte[]) winkelIn.readObject(); //de wijziging in punten terug krijgen
-					transAllowed = updatePointsShop(a,r,c,input);
+				winkelOut.writeObject("gimmeCert");
+				input = (byte[])winkelIn.readObject();//het ganse X509 certificaat dat doorgestuurd wordt naar de LCP voor controle
+	
+				verifyOut.writeObject(input);
+				input = (byte[]) verifyIn.readObject();
+				if(input.length==8){
+					WinkelMiddelwareGUI.addText("winkelCertificaat niet geldig");
 				}
 				else{
-					System.out.println("maximum aantal transacties bereikt");
+					System.out.println("input =" + new BigInteger(1,input).toString(16));
+					// hier dan mss best da eenvoudig certificaat returnen, ofwel accepted of denied
+					/* als we me accepted en denied werken, moeten we daarna weer aan de winkel het eenvoudig certificaat vragen,
+					 * met die public key parameter. probleem daarmee is da de winkel het correcte certificaat kan sturen eerst en
+					 * daarna ne foute parameter voor die key en dan ist nie veilig
+					 * 
+					 * we kunnen als het klopt da eenvoudig certificaat terug sturen, als het niet klopt denied en dan kunde in 
+					 * de kaart aan de lengte ervan zien of het just is of niet zeker
+					 * 
+					 * dus deze input is da eenvoudig certificaat voorlopig
+					 * bestaande uit: {qparameter,shopNumber,serialnumber}
+					*/
+					setCertInfoShop(a,r,c,input);//hier wordt de Q parameter en het winkel id in de kaart geset
+					
+					byte[] pseudoniemKaart = requestPseudoniem(a,r,c);//give it to me card (niet geencrypteerd)
+					
+					winkelOut.writeObject(pseudoniemKaart);//winkel checkt pseudoniem en geeft zijnn eigen cert 
+					
+					//nu beschikken ze alletwee over elkaars public key en zullen ze dus ne symmetric key kunnen vormen elk
+					keyAgreementWithShop(a,r,c);
+					
+					input = (byte[])winkelIn.readObject();//accepted of denied naargelang het cert van kaart
+					//INSTRUCTION CARD CHECK ACCPETED OR DENIED (deze input tekst is geencrypteerd)
+					System.out.println(input.length + "!!!!");
+					String accepted = decryptShopCardText(a,r,c,input);
+					System.out.println("accepted = " + accepted);
+					//TEKST BALLON OP LATEN KOMEN ALS DE RESPONSE GELIJK IS AAN DENIEDED => weergegeven dat hij opnieuw moet registreren bij de LCP voor diene winkel
+					
+					
+					boolean transAllowed;
+					if(accepted.equals("accepted")){
+						transAllowed = true;
+					}else{
+						transAllowed = false;
+					}
+					//trans hangt af of de server denieded of accepted terug stuurt na het verzende van het aantal transacties
+					while(transAllowed){
+						
+						winkelOut.writeObject(requestTransActionAmount(a,r,c));
+						input = (byte[])winkelIn.readObject();
+						transAllowed= checkTransAllowed(a,r,c,input); //hier moet de kaart dus vertalen of de server accepted of denied terug gestuurd heeft
+						//en zeggen of transactie nog mag of niet
+						//accepted teruggekregen =>true
+						if(transAllowed){
+							byte[] encryptedPunten = requestShopPoints(a,r,c); //hier moet het aantal punten op de kaart komen, geencrypteerd
+							winkelOut.writeObject(encryptedPunten);
+							input = (byte[]) winkelIn.readObject(); //de wijziging in punten terug krijgen
+							transAllowed = updatePointsShop(a,r,c,input);
+						}
+						else{
+							System.out.println("maximum aantal transacties bereikt");
+						}
+						//dit herhalen tot als we allemaal content zijn dan een 0 van de winkel dan stoppen die handel
+						//da zou het moeten zijn denk'k
+						
+					}
+					byte[] transBuffer = requestTransActionBuffer(a,r,c);//is geencrypteerd met de key van de LCP en is klaar om anar de LCP verstuurd te worden
+					//deze methode moet zeker best in client????
 				}
-				//dit herhalen tot als we allemaal content zijn dan een 0 van de winkel dan stoppen die handel
-				//da zou het moeten zijn denk'k
-				
 			}
-			byte[] transBuffer = requestTransActionBuffer(a,r,c);//is geencrypteerd met de key van de LCP en is klaar om anar de LCP verstuurd te worden
-			//deze methode moet zeker best in client????
-			
 			
 		} catch (Exception e) {
 			throw e;

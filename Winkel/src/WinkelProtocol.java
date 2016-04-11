@@ -67,6 +67,7 @@ public class WinkelProtocol {
 			}catch(Exception e){
 				WinkelGUI.addText("signature doesn't match");
 				byte[] denied = { 'd', 'e', 'n', 'i', 'e', 'd', 'e', 'd' };
+				makeSecretKeyWithCard(cardCert);
 				theOutput = encryptOutput(denied);
 				return theOutput;
 			}
@@ -75,6 +76,7 @@ public class WinkelProtocol {
 			ObjectOutputStream verifyOut = new ObjectOutputStream(verifyCertSocket.getOutputStream());
 			ObjectInputStream verifyIn = new ObjectInputStream(verifyCertSocket.getInputStream());
 			//eerst keyAgreement
+			WinkelGUI.addText("contact opnemen met LCP om kaartcertificaat te controleren");
 			verifyOut.writeObject(WinkelMain.getWinkelCert().getEncoded());
 			makeSecretKeyWithLCP();
 			input = (byte[]) verifyIn.readObject();
@@ -82,6 +84,9 @@ public class WinkelProtocol {
 			
 			if(decryptedInput[0] == 'd'){
 				WinkelGUI.addText("winkelCertificaat niet aanvaard");
+				makeSecretKeyWithCard(cardCert);
+				byte[] denied = { 'd', 'e', 'n', 'i', 'e', 'd', 'e', 'd' };
+				theOutput = encryptOutput(denied);
 			}
 			else if(decryptedInput[0] == 'a'){
 				
@@ -91,10 +96,13 @@ public class WinkelProtocol {
 				decryptedInput = decryptInput(input);
 
 				if(decryptedInput[0] == 'd'){
+					WinkelGUI.addText("pseudoniem niet aanvaard");
+					makeSecretKeyWithCard(cardCert);
 					byte[] denied = { 'd', 'e', 'n', 'i', 'e', 'd', 'e', 'd' };
 					theOutput = encryptOutput(denied);
 				}
 				else{
+					WinkelGUI.addText("pseudoniem aanvaard");
 					this.cardCert = cardCert;
 					makeSecretKeyWithCard(cardCert);
 					byte[] accepted = { 'a', 'c', 'c', 'e', 'p', 't', 'e', 'd' };
