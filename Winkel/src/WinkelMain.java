@@ -72,6 +72,7 @@ public class WinkelMain {
 			break;
 		case 1:
 			winkel = new Winkel(DELHAIZE_NAME);
+			break;
 		case 2:
 			winkel = new Winkel(ALIENWARE_NAME);
 			break;
@@ -142,6 +143,26 @@ public class WinkelMain {
 			keyIn = new FileInputStream(keystoreFile);
 			keyStore.load(keyIn, "kiwikiwi".toCharArray());
 			setWinkelCert((X509Certificate) keyStore.getCertificate("DelhaizeCert"));
+		case 2:
+		      bestandsNaam = "AlienwareCert";
+		      fileName = directoryNaam + "/" + bestandsNaam + "";
+		      keystoreFile = new File(fileName);
+		      System.out.println(keystoreFile.exists());
+
+		      keyIn = new FileInputStream(keystoreFile);
+		      keyStore.load(keyIn, "kiwikiwi".toCharArray());
+		      setWinkelCert((X509Certificate) keyStore.getCertificate("AlienwareCert"));
+		      break;
+		case 3:
+		      bestandsNaam = "RazorCert";
+		      fileName = directoryNaam + "/" + bestandsNaam + "";
+		      keystoreFile = new File(fileName);
+		      System.out.println(keystoreFile.exists());
+
+		      keyIn = new FileInputStream(keystoreFile);
+		      keyStore.load(keyIn, "kiwikiwi".toCharArray());
+		      setWinkelCert((X509Certificate) keyStore.getCertificate("RazorCert"));
+		      break;
 		}
 
 	}

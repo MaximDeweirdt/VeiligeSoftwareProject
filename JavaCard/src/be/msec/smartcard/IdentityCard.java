@@ -642,9 +642,14 @@ public class IdentityCard extends Applet {
 		}else{
 			pubParamWshop = QparamRazor;
 		}
-		short length = (short) (pubParamWshop.length-3);
+		
+		short i = 0;
+		while(pubParamWshop[i] == 0){
+			i++;
+		}
+		short length = (short) (pubParamWshop.length-i);
 		byte[] pubParamw = new byte[length];
-		Util.arrayCopy(pubParamWshop, (short) 3, pubParamw, (short) 0, (short)length);
+		Util.arrayCopy(pubParamWshop, (short) i, pubParamw, (short) 0, (short)length);
 		byte[] secret = new byte[250];
 
 		// create symmetric key with public key

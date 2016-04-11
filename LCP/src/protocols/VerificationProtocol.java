@@ -80,7 +80,7 @@ public class VerificationProtocol {
 			X509Certificate cert = (X509Certificate) certFactory.generateCertificate(in);
 			if(MainLCP.getCertList().containsKey(cert)){
 				 valid = MainLCP.getCertList().get(cert).isValid();
-				 LCPGui.addText("certificaat ongeldig");
+				// LCPGui.addText("certificaat ongeldig");
 			}
 			if(valid){
 				try {

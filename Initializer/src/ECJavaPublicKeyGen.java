@@ -85,7 +85,7 @@ public class ECJavaPublicKeyGen {
 		KeyPair kp = ECJavaPublicKeyGen.generateECCKeyPair();
 
 		String directoryNaam = "keystore";
-		String bestandsNaam = "DelhaizeCert";
+		String bestandsNaam = "RazorCert";
 		char[] password = "kiwikiwi".toCharArray();
 		KeyStore keyStore = KeyStore.getInstance("JKS");
 		String fileName = directoryNaam + "/" + bestandsNaam + "";
@@ -98,7 +98,7 @@ public class ECJavaPublicKeyGen {
 		in.close();
 		// Add the certificate
 		X509Certificate certificate = generateCertificate(kp,privateKeyLCP);
-		keyStore.setCertificateEntry("DelhaizeCert", certificate);
+		keyStore.setCertificateEntry("RazorCert", certificate);
 		// Save the new keystore contents
 		FileOutputStream out = new FileOutputStream(keystoreFile);
 		keyStore.store(out, password);
@@ -188,10 +188,10 @@ public class ECJavaPublicKeyGen {
 			SignatureException, OperatorCreationException, CertificateException, IOException {
 		Date startDate = new Date();
 		Date expiryDate = new Date(2016, 12, 31, 23, 59, 59);
-		BigInteger serialNumber = new BigInteger("" + 4); // serial number for
+		BigInteger serialNumber = new BigInteger("" + 6); // serial number for
 															// certificate
 		// keypair is the EC public/private key pair
-		X500Principal dnName = new X500Principal("CN=CA Delhaize certificate");
+		X500Principal dnName = new X500Principal("CN=CA Razor certificate");
 		ContentSigner signer = new JcaContentSignerBuilder("SHA1withECDSA").build(LCPprivateKey);
 
 		X509v1CertificateBuilder v1CertGen = new JcaX509v1CertificateBuilder(dnName, serialNumber, startDate,

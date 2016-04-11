@@ -288,7 +288,7 @@ public class Client {
 				System.err.println("fout pseudoniem voor winkel of niet geregistreerd " + winkelId);
 			}
 		}
-		
+		outBuffer.writeObject("close connection");
 		System.out.println(new String(response));
 	}
 	

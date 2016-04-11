@@ -29,6 +29,8 @@ public class MainLCP {
 	private static X509Certificate cardCert;
 	private static X509Certificate colruytCert;
 	private static X509Certificate delhaizeCert;
+	private static X509Certificate alienwareCert;
+	private static X509Certificate razorCert;
 	private static Map<X509Certificate,CertificateData> certList = new HashMap<X509Certificate, CertificateData>();
 	
 	
@@ -99,7 +101,30 @@ public class MainLCP {
 		setDelhaizeCert((X509Certificate) keyStore.getCertificate(bestandsNaam));
 		addCertToList( getDelhaizeCert());
 		
+		bestandsNaam = "AlienwareCert";
+		fileName = directoryNaam + "/" + bestandsNaam + "";
+		keystoreFile = new File(fileName);
+		System.out.println(keystoreFile.exists());
+		
+		keyIn = new FileInputStream(keystoreFile);
+		keyStore.load(keyIn, "kiwikiwi".toCharArray());
+		setAlienwareCert((X509Certificate) keyStore.getCertificate(bestandsNaam));
+		addCertToList( getAlienwareCert());
+		
+		bestandsNaam = "RazorCert";
+		fileName = directoryNaam + "/" + bestandsNaam + "";
+		keystoreFile = new File(fileName);
+		System.out.println(keystoreFile.exists());
+		
+		keyIn = new FileInputStream(keystoreFile);
+		keyStore.load(keyIn, "kiwikiwi".toCharArray());
+		setRazorCert((X509Certificate) keyStore.getCertificate(bestandsNaam));
+		addCertToList( getRazorCert());
+		
 	}
+
+
+
 
 
 	public static ECPrivateKey getPrivateKeyLCP() {
@@ -152,14 +177,28 @@ public class MainLCP {
 		MainLCP.colruytCert = colruytCert;
 	}
 
-
 	public static X509Certificate getDelhaizeCert() {
 		return delhaizeCert;
 	}
-
-
+	
 	public static void setDelhaizeCert(X509Certificate delhaizeCert) {
 		MainLCP.delhaizeCert = delhaizeCert;
+	}
+	
+	public static X509Certificate getAlienwareCert() {
+		return alienwareCert;
+	}
+
+	public static void setAlienwareCert(X509Certificate alienware) {
+		MainLCP.alienwareCert = alienware;
+	}
+	
+	private static X509Certificate getRazorCert() {
+		return razorCert;
+	}
+	
+	public static void setRazorCert(X509Certificate razor) {
+		MainLCP.razorCert = razor;
 	}
 	
 	public static void invalidateCert(X509Certificate cert){
