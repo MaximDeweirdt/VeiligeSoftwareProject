@@ -124,12 +124,17 @@ public class WinkelClient {
 		WinkelMiddelwareGUI.addText("winkelkeuze = ");
 		JDialog.setDefaultLookAndFeelDecorated(true);
 		byte [] winkelKeuze;
-		String [] keuzes = {"0", "1", "2", "3"};
-		String winkelNummer = (String) JOptionPane.showInputDialog(null, "Kies een winkel", "Winkel kiezen", JOptionPane.QUESTION_MESSAGE, null, keuzes, keuzes[0]);
-		WinkelMiddelwareGUI.addText(winkelNummer);
-		short winkelnummer = Short.parseShort(winkelNummer);
-		winkelKeuze = shortToByte((short)winkelnummer);
-		winkelPortNumber = winkelStartPortNumber + winkelnummer; 
+		String [] keuzes = {"Colruyt", "Delhaize", "Alienware", "Razor"};
+		String winkel = (String) JOptionPane.showInputDialog(null, "Kies een winkel", "Winkel kiezen", JOptionPane.QUESTION_MESSAGE, null, keuzes, keuzes[0]);
+		WinkelMiddelwareGUI.addText(winkel);
+		int winkelNummer = 0;
+		if(winkel == null || (winkel != null && winkel.equals(""))) System.exit(0);
+		else if(winkel.equals("Colruyt")) winkelNummer = 0;
+		else if(winkel.equals("Delhaize")) winkelNummer = 1;
+		else if(winkel.equals("Alienware")) winkelNummer = 2;
+		else  winkelNummer = 3;
+		winkelKeuze = shortToByte((short) winkelNummer);
+		winkelPortNumber = winkelStartPortNumber + winkelNummer; 
 		
 		winkelSocket = new Socket(hostname, winkelPortNumber);
 		
