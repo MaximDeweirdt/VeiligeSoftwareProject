@@ -219,8 +219,10 @@ public class MiddelwareGui extends JFrame {
 			public void actionPerformed(ActionEvent arg0) {
 
 				if (arg0.getSource() == correction) {
-					buffer.deleteCharAt(buffer.length() - 1);
-					jtf.setText(buffer.toString());
+					if (buffer.length() != 0) {
+						buffer.deleteCharAt(buffer.length() - 1);
+						jtf.setText(buffer.toString());
+					}
 				} else if (arg0.getSource() == stop) {
 					JDialog.setDefaultLookAndFeelDecorated(true);
 					int result = JOptionPane.showConfirmDialog(null, QUIT, QUIT_TITLE, JOptionPane.YES_NO_OPTION,
@@ -275,7 +277,7 @@ public class MiddelwareGui extends JFrame {
 					try {
 						client.requestInfo();
 						client.emptyBuffer();
-						
+
 					} catch (Exception e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();

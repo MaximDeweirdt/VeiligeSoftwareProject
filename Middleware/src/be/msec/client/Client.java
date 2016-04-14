@@ -150,22 +150,22 @@ public class Client {
 	}
 
 	public void requestCertificate() throws Exception {
-		gui.addText("Opvragen van het certificaat van de LCP. Dit gebeurt in twee stappen.");
+		gui.addText("Opvragen van het certificaat van de kaart. Dit gebeurt in twee stappen.");
 		ByteBuffer bb = ByteBuffer.allocate(263);
 		cardCert = new byte[263];
 		long time1 = System.currentTimeMillis();
 		a = new CommandAPDU(IDENTITY_CARD_CLA, GET_PART1_CERTIFICATE, 0x00, 0x00, new byte[] { (byte) 0xff });
 		r = c.transmit(a);
 		long time2 = System.currentTimeMillis();
-		gui.addText("Eerste deel van het certificaat is ontvangen:  " + r);
-		gui.addText("Het versturen en ontvangen van het eerste deel duurde: " +(time2-time1) +" milliseconden.");
+		gui.addText("Eerste deel van het certificaat is opgevragen:  " + r);
+		gui.addText("Het opvragen van het eerste deel duurde: " +(time2-time1) +" milliseconden.");
 		bb.put(r.getData());
 		time1 = System.currentTimeMillis();
 		a = new CommandAPDU(IDENTITY_CARD_CLA, GET_PART2_CERTIFICATE, 0x00, 0x00, new byte[] { (byte) 0xff });
 		r = c.transmit(a);
 		time2 = System.currentTimeMillis();
-		gui.addText("Tweede deel van het certificaat ontvangen: " + r);
-		gui.addText("Het versturen en ontvangen van het tweede deel duurde: " +(time2-time1) +" milliseconden.");
+		gui.addText("Tweede deel van het certificaat opgevragen: " + r);
+		gui.addText("Het opvragen van het tweede deel duurde: " +(time2-time1) +" milliseconden.");
 		bb.put(r.getData());
 		cardCert = bb.array();
 		gui.addText("Het ontvangen certificaat = " + new BigInteger(1, cardCert).toString(16));
