@@ -57,7 +57,7 @@ public class LCPGui extends JFrame {
 					String certName = (String) certTable.getModel().getValueAt(row, 0);
 					JDialog.setDefaultLookAndFeelDecorated(true);
 					int result = JOptionPane.showConfirmDialog(null,
-							"Wilt u het certificaat van " + certName + "  maken?",
+							"Wilt u het certificaat van " + certName + " ongeldig maken?",
 							"Certificaat ongelidg maken.", JOptionPane.YES_NO_CANCEL_OPTION,
 							JOptionPane.QUESTION_MESSAGE);
 					if (result == JOptionPane.YES_OPTION) {

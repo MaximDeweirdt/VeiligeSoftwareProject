@@ -215,8 +215,11 @@ public class Client {
 		gui.addText(r.toString());
 		gui.addText("Het geencrypteerde winkelID is: " + new BigInteger(1,r.getData()).toString(16));
 		gui.addText("Dit ID wordt nu naar de LCP gestuurd die een pseudoniem voor de kaart zal terug sturen.");
+		time1 = System.currentTimeMillis();
 		out.writeObject(encryptedShopId);
 		byte [] textinCipher = (byte[]) in.readObject();
+		time2 = System.currentTimeMillis();
+		System.out.println("vormen van het pseudoniem op de LCP duurt : " +  (time2-time1) + " ms");
 		gui.addText("Het geencrypteerde pseudoniem: " + new BigInteger(1,textinCipher).toString(16) + "\n");
 		setShopIdAndPseudoniem(winkelKeuze, textinCipher);
 	}
