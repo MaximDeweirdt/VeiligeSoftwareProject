@@ -55,9 +55,16 @@ public class LCPGui extends JFrame {
 				System.out.println("Row index: " + row);
 				if (row >= 0) {
 					String certName = (String) certTable.getModel().getValueAt(row, 0);
+					boolean valid = (Boolean) certTable.getModel().getValueAt(row, 2);
 					JDialog.setDefaultLookAndFeelDecorated(true);
+					String append;
+					if(valid){
+						append = "ongeldig";
+					} else {
+						append = "geldig";
+					}
 					int result = JOptionPane.showConfirmDialog(null,
-							"Wilt u het certificaat van " + certName + " ongeldig maken?",
+							"Wilt u het certificaat van " + certName + " " +append+ " maken?",
 							"Certificaat ongelidg maken.", JOptionPane.YES_NO_CANCEL_OPTION,
 							JOptionPane.QUESTION_MESSAGE);
 					if (result == JOptionPane.YES_OPTION) {
