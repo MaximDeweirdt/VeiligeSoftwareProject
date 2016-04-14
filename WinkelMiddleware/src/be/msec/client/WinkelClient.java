@@ -193,49 +193,53 @@ public class WinkelClient {
 					setCertInfoShop(a,r,c,input);//hier wordt de Q parameter en het winkel id in de kaart geset
 					
 					byte[] pseudoniemKaart = requestPseudoniem(a,r,c);//give it to me card (niet geencrypteerd)
-					
-					winkelOut.writeObject(pseudoniemKaart);//winkel checkt pseudoniem en geeft zijnn eigen cert 
-					
-					//nu beschikken ze alletwee over elkaars public key en zullen ze dus ne symmetric key kunnen vormen elk
-					keyAgreementWithShop(a,r,c);
-					
-					input = (byte[])winkelIn.readObject();//accepted of denied naargelang het cert van kaart
-					//INSTRUCTION CARD CHECK ACCPETED OR DENIED (deze input tekst is geencrypteerd)
-					System.out.println(input.length + "!!!!");
-					String accepted = decryptShopCardText(a,r,c,input);
-					System.out.println("accepted = " + accepted);
-					//TEKST BALLON OP LATEN KOMEN ALS DE RESPONSE GELIJK IS AAN DENIEDED => weergegeven dat hij opnieuw moet registreren bij de LCP voor diene winkel
-					
-					
-					boolean transAllowed;
-					if(accepted.equals("accepted")){
-						transAllowed = true;
-					}else{
-						transAllowed = false;
+					if(pseudoniemKaart.length == 0){
+						winkelOut.writeObject("close connection"); 
 					}
-					//trans hangt af of de server denieded of accepted terug stuurt na het verzende van het aantal transacties
-					while(transAllowed){
+					else{
+						winkelOut.writeObject(pseudoniemKaart);//winkel checkt pseudoniem en geeft zijnn eigen cert 
 						
-						winkelOut.writeObject(requestTransActionAmount(a,r,c));
-						input = (byte[])winkelIn.readObject();
-						transAllowed= checkTransAllowed(a,r,c,input); //hier moet de kaart dus vertalen of de server accepted of denied terug gestuurd heeft
-						//en zeggen of transactie nog mag of niet
-						//accepted teruggekregen =>true
-						if(transAllowed){
-							byte[] encryptedPunten = requestShopPoints(a,r,c); //hier moet het aantal punten op de kaart komen, geencrypteerd
-							winkelOut.writeObject(encryptedPunten);
-							input = (byte[]) winkelIn.readObject(); //de wijziging in punten terug krijgen
-							transAllowed = updatePointsShop(a,r,c,input);
-						}
-						else{
-							System.out.println("maximum aantal transacties bereikt");
-						}
-						//dit herhalen tot als we allemaal content zijn dan een 0 van de winkel dan stoppen die handel
-						//da zou het moeten zijn denk'k
+						//nu beschikken ze alletwee over elkaars public key en zullen ze dus ne symmetric key kunnen vormen elk
+						keyAgreementWithShop(a,r,c);
 						
+						input = (byte[])winkelIn.readObject();//accepted of denied naargelang het cert van kaart
+						//INSTRUCTION CARD CHECK ACCPETED OR DENIED (deze input tekst is geencrypteerd)
+						System.out.println(input.length + "!!!!");
+						String accepted = decryptShopCardText(a,r,c,input);
+						System.out.println("accepted = " + accepted);
+						//TEKST BALLON OP LATEN KOMEN ALS DE RESPONSE GELIJK IS AAN DENIEDED => weergegeven dat hij opnieuw moet registreren bij de LCP voor diene winkel
+						
+						
+						boolean transAllowed;
+						if(accepted.equals("accepted")){
+							transAllowed = true;
+						}else{
+							transAllowed = false;
+						}
+						//trans hangt af of de server denieded of accepted terug stuurt na het verzende van het aantal transacties
+						while(transAllowed){
+							
+							winkelOut.writeObject(requestTransActionAmount(a,r,c));
+							input = (byte[])winkelIn.readObject();
+							transAllowed= checkTransAllowed(a,r,c,input); //hier moet de kaart dus vertalen of de server accepted of denied terug gestuurd heeft
+							//en zeggen of transactie nog mag of niet
+							//accepted teruggekregen =>true
+							if(transAllowed){
+								byte[] encryptedPunten = requestShopPoints(a,r,c); //hier moet het aantal punten op de kaart komen, geencrypteerd
+								winkelOut.writeObject(encryptedPunten);
+								input = (byte[]) winkelIn.readObject(); //de wijziging in punten terug krijgen
+								transAllowed = updatePointsShop(a,r,c,input);
+							}
+							else{
+								System.out.println("maximum aantal transacties bereikt");
+							}
+							//dit herhalen tot als we allemaal content zijn dan een 0 van de winkel dan stoppen die handel
+							//da zou het moeten zijn denk'k
+							
+						}
+						byte[] transBuffer = requestTransActionBuffer(a,r,c);//is geencrypteerd met de key van de LCP en is klaar om anar de LCP verstuurd te worden
+						//deze methode moet zeker best in client????
 					}
-					byte[] transBuffer = requestTransActionBuffer(a,r,c);//is geencrypteerd met de key van de LCP en is klaar om anar de LCP verstuurd te worden
-					//deze methode moet zeker best in client????
 				}
 			}
 			
@@ -350,9 +354,10 @@ public class WinkelClient {
 		System.out.println("pseudoniem = " + r);
 		System.out.println("pseudoniem = " + new BigInteger(1,pseudoniem).toString(16));
 		int i = 0;
-		while(pseudoniem[i]==0){
+		while(i < 250 && pseudoniem[i]==0){
 			i++;
 		}
+		if(i==250) return new byte[0];
 		byte[] dest = new byte[pseudoniem.length-i];
 		System.arraycopy(pseudoniem, i, dest, 0, pseudoniem.length-i);
 		return dest;
