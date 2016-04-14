@@ -18,6 +18,7 @@ import javax.crypto.spec.DESKeySpec;
 
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 
+import gui.LCPGui;
 import main.CertificateData;
 import main.MainLCP;
 
@@ -44,6 +45,8 @@ public class RevalidateProtocol {
 
 			theOutput = "close connection";
 		} else if (state == KEYAGREESTATE) {
+			
+			LCPGui.addText("keyagreement bij revalidate protocol");
 			byte[] input = (byte[]) theInput;
 			boolean valid = true;
 			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
@@ -56,19 +59,20 @@ public class RevalidateProtocol {
 				try {
 					cert.checkValidity();
 					cert.verify(MainLCP.getPublicKeyLCP());
-					System.out.println("signature is correct");
+					LCPGui.addText("signature is correct");
 					makeSecretKey(cert);
 					state = FINDCERTSTATE;
 					byte[] accepted = { 'a', 'c', 'c', 'e', 'p', 't', 'e', 'd' };
 					theOutput = encryptOutput(accepted);
 				} catch (Exception e) {
-					System.err.println("signature isn't correct");
+					LCPGui.addText("signature isn't correct");
 					byte[] denied = { 'd', 'e', 'n', 'i', 'e', 'd', 'e', 'd' };
 					theOutput = encryptOutput(denied);
 					state = KEYAGREESTATE;
 				}
 			}
 			else{
+				LCPGui.addText("certificaat is niet geldig");
 				byte[] denied = { 'd', 'e', 'n', 'i', 'e', 'd', 'e', 'd' };
 				theOutput = encryptOutput(denied);
 				state = KEYAGREESTATE;

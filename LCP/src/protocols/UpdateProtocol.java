@@ -18,6 +18,7 @@ import javax.crypto.spec.DESKeySpec;
 
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 
+import gui.LCPGui;
 import main.CertificateData;
 import main.MainLCP;
 
@@ -43,6 +44,7 @@ public class UpdateProtocol {
 
 			theOutput = "close connection";
 		} else if (state == KEYAGREESTATE) {
+			LCPGui.addText("keyagreement bij update protocol");
 			byte[] input = (byte[]) theInput;
 			boolean valid = true;
 			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
@@ -101,7 +103,7 @@ public class UpdateProtocol {
 			byte[] input = decryptInput(encryptedInput);
 			
 			certData.addData(input);
-			
+			LCPGui.addText("transactie toegevoegd in lcp");
 			byte[] accepted = { 'a', 'c', 'c', 'e', 'p', 't', 'e', 'd' };
 			theOutput = encryptOutput(accepted);
 		}
