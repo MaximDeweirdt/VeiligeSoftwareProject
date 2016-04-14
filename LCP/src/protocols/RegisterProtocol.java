@@ -58,21 +58,34 @@ public class RegisterProtocol {
 			theOutput = "close connection";
 		} else if (state == CHECKCERTIFICATESTATE) {
 			byte[] input = (byte[]) theInput;
+			boolean valid = true;
+			LCPGui.addText("keyagreement bij registratie protocol");
 			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
 			InputStream in = new ByteArrayInputStream(input);
 			X509Certificate cardCert = (X509Certificate) certFactory.generateCertificate(in);
-
-			try {
-				LCPGui.addText("Het certificaat van de kaart wordt nu gecontroleerd.");
-				cardCert.checkValidity();
-				cardCert.verify(MainLCP.getPublicKeyLCP());
-				LCPGui.addText("De signature is correct.");
+			if(MainLCP.getCertList().containsKey(cardCert)){
+				 valid = MainLCP.getCertList().get(cardCert).isValid();
+			}
+			if(valid){
+				try {
+					LCPGui.addText("De signature van de kaart wordt nu gecontroleerd.");
+					cardCert.checkValidity();
+					cardCert.verify(MainLCP.getPublicKeyLCP());
+					LCPGui.addText("De signature is correct.");
+					makeSecretKey(cardCert);
+					byte[] accepted = { 'a', 'c', 'c', 'e', 'p', 't', 'e', 'd' };
+					theOutput = encryptOutput(accepted);
+					state = KIESWINKELSTATE;
+				} catch (Exception e) {
+					LCPGui.addText("De signature is niet correct.");
+					byte[] denied = { 'd', 'e', 'n', 'i', 'e', 'd', 'e', 'd' };
+					theOutput = encryptOutput(denied);
+					state = CHECKCERTIFICATESTATE;
+				}
+			}
+			else{
+				LCPGui.addText("Het certificaat van de kaart is niet geldig");
 				makeSecretKey(cardCert);
-				byte[] accepted = { 'a', 'c', 'c', 'e', 'p', 't', 'e', 'd' };
-				theOutput = encryptOutput(accepted);
-				state = KIESWINKELSTATE;
-			} catch (Exception e) {
-				LCPGui.addText("De signature is niet correct.");
 				byte[] denied = { 'd', 'e', 'n', 'i', 'e', 'd', 'e', 'd' };
 				theOutput = encryptOutput(denied);
 				state = CHECKCERTIFICATESTATE;

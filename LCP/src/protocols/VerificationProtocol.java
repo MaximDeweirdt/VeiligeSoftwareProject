@@ -41,6 +41,8 @@ public class VerificationProtocol {
 
 			theOutput = "close connection";
 		} else if (state == KEYAGREESTATE) {
+			
+			LCPGui.addText("keyagreement bij verificatie protocol");
 			byte[] input = (byte[]) theInput;
 			boolean valid = true;
 			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
@@ -87,16 +89,18 @@ public class VerificationProtocol {
 					cert.checkValidity();
 					cert.verify(MainLCP.getPublicKeyLCP());
 					System.out.println("signature is correct");
-					
+					LCPGui.addText("certificaat is goedgekeurd");
 					byte[] accepted = getSimpleCert(cert);
 					theOutput = encryptOutput(accepted);
 				} catch (Exception e) {
+					LCPGui.addText("certificaat is niet geldig");
 					System.err.println("signature isn't correct");
 					byte[] denied = { 'd', 'e', 'n', 'i', 'e', 'd', 'e', 'd' };
 					theOutput = encryptOutput(denied);
 				}
 			}
 			else{
+				LCPGui.addText("certificaat is niet geldig");
 				byte[] denied = { 'd', 'e', 'n', 'i', 'e', 'd', 'e', 'd' };
 				theOutput = encryptOutput(denied);
 			}
