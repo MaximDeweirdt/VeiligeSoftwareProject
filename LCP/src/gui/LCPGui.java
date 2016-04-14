@@ -55,22 +55,26 @@ public class LCPGui extends JFrame {
 				System.out.println("Row index: " + row);
 				if (row >= 0) {
 					String certName = (String) certTable.getModel().getValueAt(row, 0);
-					boolean valid = (Boolean) certTable.getModel().getValueAt(row, 2);
+					boolean valid = ((String) certTable.getModel().getValueAt(row, 2)).equals("true");
 					JDialog.setDefaultLookAndFeelDecorated(true);
 					String append;
-					if(valid){
+					if (valid) {
 						append = "ongeldig";
 					} else {
 						append = "geldig";
 					}
 					int result = JOptionPane.showConfirmDialog(null,
-							"Wilt u het certificaat van " + certName + " " +append+ " maken?",
+							"Wilt u het certificaat van " + certName + " " + append + " maken?",
 							"Certificaat ongelidg maken.", JOptionPane.YES_NO_CANCEL_OPTION,
 							JOptionPane.QUESTION_MESSAGE);
 					if (result == JOptionPane.YES_OPTION) {
 						BigInteger serienummer = new BigInteger((String) certTable.getModel().getValueAt(row, 1));
 						X509Certificate cert = MainLCP.getCert(serienummer);
-						MainLCP.invalidateCert(cert);
+						if (valid) {
+							MainLCP.invalidateCert(cert);
+						} else {
+							MainLCP.validateCert(cert);
+						}
 						certTable.getModel().setValueAt("" + MainLCP.certIsValid(serienummer), row, 2);
 						DefaultTableModel model = (DefaultTableModel) certTable.getModel();
 						model.fireTableDataChanged();

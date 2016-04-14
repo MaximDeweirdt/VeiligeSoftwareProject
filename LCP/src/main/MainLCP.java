@@ -207,6 +207,12 @@ public class MainLCP {
 		}
 	}
 	
+	public static void validateCert(X509Certificate cert){
+		if(MainLCP.certList.containsKey(cert)){
+			MainLCP.certList.get(cert).setValid(true);
+		}
+	}
+	
 	public static X509Certificate getCert(BigInteger serienummer){
 		for(Map.Entry<X509Certificate, CertificateData> entry : certList.entrySet()){
 			if(entry.getKey().getSerialNumber().equals(serienummer)) return entry.getKey();
