@@ -170,8 +170,11 @@ public class Client {
 		cardCert = bb.array();
 		gui.addText("Het ontvangen certificaat = " + new BigInteger(1, cardCert).toString(16));
 		gui.addText("Nu wordt het certificaat van de smartcard verstuurd naar de LCP.\n");
+		time1 = System.currentTimeMillis();
 		out.writeObject(cardCert);
 		byte[] input = (byte[]) in.readObject();
+		time2 = System.currentTimeMillis();
+		System.out.println(time1-time2);
 		checkCorrectCertificate(input);
 		if(correctCardCert){
 			state = ENTER_STORE;
