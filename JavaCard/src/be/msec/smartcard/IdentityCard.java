@@ -889,24 +889,25 @@ public class IdentityCard extends Applet {
 	}
 
 	private void keyAgreementLCP(APDU apdu) {
-		// get public key out of the data from the apdu data field
-		short length2 = apdu.setIncomingAndReceive();
-		byte[] pubParamWOther = publicKeyParameterQFromLCP;
-		
-		byte[] secret = new byte[250];
-		
-		// create symmetric key with public key
-		PrivateKey cardPrivKey = getprivateKey();
-		KeyAgreement keyAgreement= KeyAgreement.getInstance(KeyAgreement.ALG_EC_SVDP_DH, false);
-		keyAgreement.init(cardPrivKey);
-		short secretKeyLength = keyAgreement.generateSecret(pubParamWOther, (short)0, (short) pubParamWOther.length, secret, (short)0);
-		
-		//copy secret key to secretkey byte array with adjusted size
-		byte[] secretKey = new byte[secretKeyLength];
-		Util.arrayCopy(secret, (short)0, secretKey,(short) 0, secretKeyLength);
-		
 		if(!pin.isValidated())ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
 		else{
+			// get public key out of the data from the apdu data field
+			short length2 = apdu.setIncomingAndReceive();
+			byte[] pubParamWOther = publicKeyParameterQFromLCP;
+			
+			byte[] secret = new byte[250];
+			
+			// create symmetric key with public key
+			PrivateKey cardPrivKey = getprivateKey();
+			KeyAgreement keyAgreement= KeyAgreement.getInstance(KeyAgreement.ALG_EC_SVDP_DH, false);
+			keyAgreement.init(cardPrivKey);
+			short secretKeyLength = keyAgreement.generateSecret(pubParamWOther, (short)0, (short) pubParamWOther.length, secret, (short)0);
+			
+			//copy secret key to secretkey byte array with adjusted size
+			byte[] secretKey = new byte[secretKeyLength];
+			Util.arrayCopy(secret, (short)0, secretKey,(short) 0, secretKeyLength);
+		
+
 			generateCipherLCP(secretKey);
 			apdu.setOutgoing();
 			apdu.setOutgoingLength((short) secretKeyLength);
